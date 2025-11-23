@@ -168,7 +168,8 @@ function showUpdatePopup(updateInfo) {
                 Released on ${new Date(updateInfo.release_date).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'Asia/Kolkata'
     })}
             </p>
 

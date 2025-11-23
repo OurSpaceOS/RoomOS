@@ -94,6 +94,7 @@ $routes = [
     // Auth
     '/auth/register' => ['AuthController', 'register'],
     '/auth/login' => ['AuthController', 'login'],
+    '/auth/reset-password' => ['AuthController', 'resetPassword'],
     
     // Group
     '/group/create' => ['GroupController', 'create'],

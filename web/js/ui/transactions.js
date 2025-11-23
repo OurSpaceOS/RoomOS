@@ -27,7 +27,7 @@ export async function renderTransactions() {
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
-        const currentMonthName = now.toLocaleDateString('en-US', { month: 'long' });
+        const currentMonthName = now.toLocaleDateString('en-US', { month: 'long', timeZone: 'Asia/Kolkata' });
         
         const currentMonthTransactions = myTransactions.filter(t => {
             const transDate = new Date(t.created_at);
@@ -432,7 +432,8 @@ export async function renderTransactions() {
                     month: 'long', 
                     year: 'numeric',
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    timeZone: 'Asia/Kolkata'
                 });
 
                 // Calculate split amount
@@ -500,6 +501,16 @@ export async function renderTransactions() {
         });
 
     } catch (error) {
-        container.innerHTML = `<div class="p-4" style="color: var(--danger)">Error: ${error.message}</div>`;
+        container.innerHTML = `
+            <div class="card" style="border-left: 4px solid var(--danger); animation: fadeIn 0.3s ease-out;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-warning-circle" style="font-size: 2rem; color: var(--danger);"></i>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0; font-weight: 600; color: var(--text-primary);">An Error Occurred</h3>
+                        <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${error.message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }

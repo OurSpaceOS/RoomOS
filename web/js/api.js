@@ -29,7 +29,14 @@ export async function apiCall(endpoint, method = 'GET', body = null, token = nul
         if (!response.ok) {
             // If Client Error (4xx), do NOT queue. Throw immediately.
             if (response.status >= 400 && response.status < 500) {
-                throw new Error(data.error || 'Client Error');
+                // Special handling for 401 Unauthorized errors
+                if (response.status === 401) {
+                    // If it's a token error (not a login failure), redirect to login
+                    if (data.error !== 'Invalid credentials') {
+                        window.location.href = '/'; // Force a full page reload to the login screen
+                    }
+                }
+                throw new Error(data.error || 'An error occurred');
             }
             throw new Error(data.error || 'Server Error');
         }
@@ -52,7 +59,7 @@ export async function apiCall(endpoint, method = 'GET', body = null, token = nul
         if (method === 'GET') {
             const cached = await getCachedData(endpoint);
             if (cached) {
-                showToast('Offline Mode: Showing cached data', 'info');
+                
                 return cached;
             }
         }
@@ -63,10 +70,14 @@ export async function apiCall(endpoint, method = 'GET', body = null, token = nul
             }
 
             await queueAction(endpoint, method, body);
-            showToast('Offline: Action queued for sync', 'info');
+            
             // We return a dummy success to keep UI moving if possible, or throw specific error
             // For now, let's throw but with a specific message UI can handle
             throw new Error('OFFLINE_QUEUED');
+        }
+
+        if (!navigator.onLine) {
+            throw new Error("You are offline and no cached data is available for this page.");
         }
 
         throw error;
