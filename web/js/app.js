@@ -1,6 +1,8 @@
 import { renderLogin } from './ui/login.js';
+import { apiCall } from './api.js';
+// import { renderForgotPassword } from './ui/forgot_password.js';
 import { renderGroupSetup } from './ui/group_setup.js';
-import { renderDashboard } from './ui/dashboard.js';
+import { renderDashboard, stopDashboardUpdates } from './ui/dashboard.js';
 import { renderRoster } from './ui/roster.js';
 import { renderCrew } from './ui/crew.js';
 import { renderRules } from './ui/rules.js';
@@ -46,7 +48,7 @@ export function navigate(view) {
     container.innerHTML = '';
 
     // Handle Auth Guard
-    if (!localStorage.getItem('token') && view !== 'login') {
+    if (!localStorage.getItem('token') && !['login', 'forgot-password'].includes(view)) {
         view = 'login';
     }
 
@@ -54,7 +56,7 @@ export function navigate(view) {
     console.log('Current State:', state);
 
     // Auth Guard
-    if (!state.token && view !== 'login') {
+    if (!state.token && !['login', 'forgot-password'].includes(view)) {
         console.log('Auth Guard Blocked');
         renderLogin();
         return;
@@ -89,8 +91,8 @@ export function navigate(view) {
 
     // Hide/Show bottom nav and chat button based on view
     const chatBtn = document.getElementById('chat-btn');
-    const shouldHideNav = ['chat', 'login', 'group_setup'].includes(view);
-    const shouldHideChat = ['login', 'group_setup'].includes(view);
+    const shouldHideNav = ['chat', 'login', 'group_setup', 'forgot-password'].includes(view);
+    const shouldHideChat = ['login', 'group_setup', 'forgot-password'].includes(view);
 
     if (bottomNav) {
         bottomNav.style.display = shouldHideNav ? 'none' : 'flex';
@@ -105,9 +107,12 @@ export function navigate(view) {
         el.classList.toggle('active', el.dataset.target === view);
     });
 
-    // Stop Chat Polling if leaving chat
+    // Stop polling/intervals when leaving views
     if (view !== 'chat') {
         stopChatPolling();
+    }
+    if (view !== 'dashboard') {
+        stopDashboardUpdates();
     }
 
     // Clear current view
@@ -117,6 +122,9 @@ export function navigate(view) {
     switch (view) {
         case 'login':
             renderLogin();
+            break;
+        case 'forgot-password':
+            renderForgotPassword();
             break;
         case 'group_setup':
             renderGroupSetup();
@@ -185,12 +193,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Route
     if (state.token) {
-        const lastView = localStorage.getItem('last_view');
-        if (lastView && lastView !== 'login' && lastView !== 'group_setup') {
-            navigate(lastView);
-        } else {
-            navigate('dashboard');
-        }
+        // Verify token is valid before proceeding. If not, force login.
+        // A simple way is to try to fetch something that requires auth, like the user's schedule.
+        // If it fails with a 401, we know the token is bad.
+        apiCall('/schedule/get', 'GET', null, state.token)
+            .then(() => {
+                const lastView = localStorage.getItem('last_view');
+                if (lastView && lastView !== 'login' && lastView !== 'group_setup') {
+                    navigate(lastView);
+                } else {
+                    navigate('dashboard');
+                }
+            })
+            .catch(() => navigate('login')); // If the check fails, go to login
     } else {
         navigate('login');
     }

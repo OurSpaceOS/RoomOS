@@ -41,13 +41,47 @@ class RosterController {
             return;
         }
 
+        // Fetch the generated roster plan
         $stmt = $this->pdo->prepare("SELECT * FROM roster WHERE group_id = ? ORDER BY day_index ASC");
         $stmt->execute([$user['group_id']]);
         $roster = $stmt->fetchAll();
 
-        // If empty, init empty roster
         if (empty($roster)) {
             $roster = $this->initRoster($user['group_id']);
+        }
+
+        // Fetch all member schedules to provide context to the frontend
+        $stmt = $this->pdo->prepare("SELECT id, name FROM users WHERE group_id = ?");
+        $stmt->execute([$user['group_id']]);
+        $members = $stmt->fetchAll();
+
+        $memberIds = array_column($members, 'id');
+        $placeholders = implode(',', array_fill(0, count($memberIds), '?'));
+        $stmt = $this->pdo->prepare("SELECT user_id, schedule_json FROM user_schedules WHERE user_id IN ($placeholders)");
+        $stmt->execute($memberIds);
+        $schedulesData = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $parsedSchedules = [];
+        foreach ($schedulesData as $uid => $json) {
+            $parsedSchedules[$uid] = json_decode($json, true);
+        }
+
+        // Attach daily schedule info to each roster day
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        foreach ($roster as &$day) {
+            $dayName = $days[$day['day_index']];
+            $dailySchedules = [];
+            foreach ($members as $member) {
+                $schedule = $parsedSchedules[$member['id']][$dayName] ?? null;
+                $isOff = !$schedule || !empty($schedule['off']);
+                $dailySchedules[] = [
+                    'name' => $member['name'],
+                    'leaveAt' => $isOff ? null : ($schedule['start'] ?? null),
+                    'isOff' => $isOff
+                ];
+            }
+            // Add this rich data to the response
+            $day['schedules'] = $dailySchedules;
         }
 
         echo json_encode(['roster' => $roster, 'role' => $user['role']]);

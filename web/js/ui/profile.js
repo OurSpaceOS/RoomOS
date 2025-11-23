@@ -71,24 +71,31 @@ export async function renderProfile() {
         ${user.role === 'admin' && pendingRequests.length > 0 ? renderPendingRequests(pendingRequests) : ''}
 
         <!-- Weekly Schedule Card -->
-        <div class="card">
-          <h2>Weekly Class Schedule</h2>
-          <p style="margin: 0 0 var(--space-lg) 0; color: var(--text-secondary); font-size: 0.85rem;">
-            Set your class times. Check "Off" for days without classes.
-          </p>
-          <div id="schedule-container">
-            ${renderScheduleForm(schedule)}
-          </div>
-          <button id="save-schedule-btn" class="btn btn-primary" style="margin-top: var(--space-lg);">
-            Save Schedule
-          </button>
-          ${user.role === 'admin' ? `
-          <button id="generate-plan-btn" class="btn" style="margin-top: var(--space-sm); background: var(--success); color: white;">
-            Generate Weekly Plan
-          </button>` : ''}
-          <p style="margin-top: var(--space-sm); font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">
-            Plan will be auto-generated when all members complete their schedules
-          </p>
+        <div class="card card-collapsible">
+          <details>
+            <summary class="details-summary-profile">
+              <h2>Weekly Class Schedule</h2>
+              <i class="ph ph-caret-down"></i>
+            </summary>
+            <div class="details-content-profile">
+              <p style="margin: 0 0 var(--space-lg) 0; color: var(--text-secondary); font-size: 0.85rem;">
+                Set your class times. Check "Off" for days without classes.
+              </p>
+              <div id="schedule-container">
+                ${renderScheduleForm(schedule)}
+              </div>
+              <button id="save-schedule-btn" class="btn btn-primary" style="margin-top: var(--space-lg);">
+                Save Schedule
+              </button>
+              ${user.role === 'admin' ? `
+              <button id="generate-plan-btn" class="btn" style="margin-top: var(--space-sm); background: var(--success); color: white;">
+                Generate Weekly Plan
+              </button>` : ''}
+              <p style="margin-top: var(--space-sm); font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">
+                Plan will be auto-generated when all members complete their schedules
+              </p>
+            </div>
+          </details>
         </div>
 
         <!-- Settings -->
@@ -97,6 +104,26 @@ export async function renderProfile() {
           <button class="btn" style="background: var(--danger); color: white;" id="logout-btn">
             Logout
           </button>
+        </div>
+
+        <!-- Password Reset Card -->
+        <div class="card">
+            <h2>Reset Password</h2>
+            <div class="input-group">
+                <label for="current-password" class="input-label">Current Password</label>
+                <input type="password" id="current-password" class="input-field" placeholder="Enter your current password">
+            </div>
+            <div class="input-group">
+                <label for="new-password" class="input-label">New Password</label>
+                <input type="password" id="new-password" class="input-field" placeholder="Enter a strong new password">
+            </div>
+            <div class="input-group">
+                <label for="confirm-password" class="input-label">Confirm New Password</label>
+                <input type="password" id="confirm-password" class="input-field" placeholder="Confirm your new password">
+            </div>
+            <button id="reset-password-btn" class="btn btn-primary" style="margin-top: var(--space-md);">
+                Update Password
+            </button>
         </div>
 
         <!-- Logout Confirmation Modal -->
@@ -126,6 +153,7 @@ export async function renderProfile() {
     document.getElementById('save-schedule-btn')?.addEventListener('click', saveSchedule);
     document.getElementById('generate-plan-btn')?.addEventListener('click', generatePlan);
     document.getElementById('logout-btn')?.addEventListener('click', logout);
+    document.getElementById('reset-password-btn')?.addEventListener('click', handlePasswordReset);
 
     // Off-day checkboxes
     document.querySelectorAll('.off-checkbox').forEach(checkbox => {
@@ -183,8 +211,17 @@ export async function renderProfile() {
 
 
   } catch (error) {
-    container.innerHTML = `<div class="p-4" style="color: var(--danger)">Error: ${error.message}</div>`;
-  }
+            container.innerHTML = `
+                <div class="card" style="border-left: 4px solid var(--danger); animation: fadeIn 0.3s ease-out;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="ph ph-warning-circle" style="font-size: 2rem; color: var(--danger);"></i>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0; font-weight: 600; color: var(--text-primary);">An Error Occurred</h3>
+                            <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${error.message}</p>
+                        </div>
+                    </div>
+                </div>
+            `;  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -208,7 +245,7 @@ function renderScheduleForm(schedule) {
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm);">
           <div>
-            <label style="display: block; font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">Start Time</label>
+            <label style="display: block; font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 4px;">Leave at</label>
             <input type="time" class="input-field time-input schedule-input" data-day="${day}" data-type="start"
               value="${isOff ? '' : daySchedule.start}" ${isOff ? 'disabled' : ''}>
           </div>
@@ -246,7 +283,7 @@ function renderPendingRequests(requests) {
             <div style="font-weight: 600; color: var(--text-primary);">${req.name}</div>
             <div style="font-size: 0.85rem; color: var(--text-secondary);">${req.email}</div>
             <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px;">
-              ${new Date(req.created_at).toLocaleDateString()}
+              ${new Date(req.created_at).toLocaleDateString([], { timeZone: 'Asia/Kolkata' })}
             </div>
           </div>
         </div>
@@ -334,5 +371,39 @@ async function rejectRequest(requestId) {
     renderProfile();
   } catch (err) {
     showToast(err.message || 'Failed to reject', 'error');
+  }
+}
+
+async function handlePasswordReset() {
+  const currentPassword = document.getElementById('current-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showToast('Please fill in all password fields.', 'error');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast('New passwords do not match.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('reset-password-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph ph-spinner-gap animate-spin"></i> Updating...';
+
+  try {
+    const token = localStorage.getItem('token');
+    await apiCall('/auth/reset-password', 'POST', { current_password: currentPassword, new_password: newPassword }, token);
+    showToast('Password updated successfully!', 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Update Password';
+    document.getElementById('current-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
   }
 }

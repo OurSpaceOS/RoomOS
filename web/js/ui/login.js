@@ -30,7 +30,7 @@ export function renderLogin() {
                     
                     <button type="submit" class="btn btn-primary mb-4" id="submit-btn">Login</button>
                     
-                    <div class="flex-center">
+                    <div class="auth-links">
                         <a href="#" id="toggle-auth" style="color: var(--accent-primary); text-decoration: none; font-size: 0.9rem;">
                             New here? Create account
                         </a>

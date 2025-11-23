@@ -157,185 +157,134 @@ class ScheduleController {
         }
 
         foreach ($days as $dayIndex => $dayName) {
+            // Step 1: Gather daily info for each person
             $peopleInfo = [];
-            
             foreach ($members as $member) {
                 $userId = $member['id'];
                 $userName = $member['name'];
                 $daySchedule = $schedules[$userId][$dayName] ?? null;
 
-                if (!$daySchedule || $daySchedule['off']) {
-                    $peopleInfo[] = [
-                        'name' => $userName,
-                        'classStart' => null,
-                        'classEnd' => null,
-                        'isOff' => true,
-                        'classHours' => 0,
-                        'shifts' => $totalShifts[$userName]
-                    ];
-                } else {
-                    $start = $daySchedule['start'] ?? '00:00';
-                    $end = $daySchedule['end'] ?? '23:59';
-                    
-                    // Calculate class duration in hours
-                    $startTime = strtotime($start);
-                    $endTime = strtotime($end);
-                    $hours = ($endTime - $startTime) / 3600;
-                    
-                    $peopleInfo[] = [
-                        'name' => $userName,
-                        'classStart' => $start,
-                        'classEnd' => $end,
-                        'isOff' => false,
-                        'classHours' => $hours,
-                        'shifts' => $totalShifts[$userName]
-                    ];
-                }
-            }
+                $isOff = !$daySchedule || !empty($daySchedule['off']);
+                $start = !$isOff && !empty($daySchedule['start']) ? $daySchedule['start'] : null;
+                $end = !$isOff && !empty($daySchedule['end']) ? $daySchedule['end'] : null;
+                $hours = ($start && $end) ? (strtotime($end) - strtotime($start)) / 3600 : 0;
 
-            // === MORNING SHIFT ASSIGNMENT ===
-            // Rule: Need time to cook (6am-12pm)
-            // If class starts before 11am → Can't cook
-            // If class starts 11am or later → Can cook
-            
-            $morningWorkers = [];
-            $morningPassengers = [];
-            
-            foreach ($peopleInfo as $person) {
-                if ($person['isOff']) {
-                    // Off day = can definitely cook
-                    $morningWorkers[] = [
-                        'name' => $person['name'],
-                        'time' => 'Day Off',
-                        'priority' => $person['shifts'] // Lower shifts = higher priority
-                    ];
-                } elseif ($person['classStart']) {
-                    $startHour = (int)substr($person['classStart'], 0, 2);
-                    $startMin = (int)substr($person['classStart'], 3, 2);
-                    $startDecimal = $startHour + ($startMin / 60);
-                    
-                    if ($startDecimal >= 11.0) {
-                        // Can cook! Has time before class
-                        $morningWorkers[] = [
-                            'name' => $person['name'],
-                            'time' => 'Cook before leaving',
-                            'priority' => $person['shifts']
-                        ];
-                    } else {
-                        // Too early, can't cook
-                        $morningPassengers[] = $person['name'];
-                    }
-                } else {
-                    $morningPassengers[] = $person['name'];
-                }
-            }
-
-            // Sort by priority (fewer shifts first) and pick top 2
-            usort($morningWorkers, function($a, $b) {
-                return $a['priority'] - $b['priority'];
-            });
-            
-            $finalMorningWorkers = [];
-            $morningWorkerNames = [];
-            for ($i = 0; $i < min(2, count($morningWorkers)); $i++) {
-                $finalMorningWorkers[] = [
-                    'n' => $morningWorkers[$i]['name'],
-                    't' => $morningWorkers[$i]['time']
+                $peopleInfo[] = [
+                    'name' => $userName,
+                    'leaveAt' => $start,
+                    'leaveAtTimestamp' => $start ? strtotime($start) : null,
+                    'classEnd' => $end,
+                    'isOff' => $isOff,
+                    'classHours' => $hours,
+                    'shifts' => $totalShifts[$userName]
                 ];
-                $morningWorkerNames[] = $morningWorkers[$i]['name'];
-                $totalShifts[$morningWorkers[$i]['name']]++;
             }
-            
-            // Add remaining as passengers
+
+            // Step 2: Find the "Alarm Clock" person (earliest leave time)
+            $earliestLeaveTimestamp = null;
+            foreach ($peopleInfo as $person) {
+                if (!$person['isOff'] && $person['leaveAtTimestamp']) {
+                    if ($earliestLeaveTimestamp === null || $person['leaveAtTimestamp'] < $earliestLeaveTimestamp) {
+                        $earliestLeaveTimestamp = $person['leaveAtTimestamp'];
+                    }
+                }
+            }
+
+            // Step 3: Identify available morning workers
+            $morningCandidates = [];
+            $allPassengers = [];
+            $PREP_TIME_SECONDS = 2 * 3600; // 2 hours
+
+            if ($earliestLeaveTimestamp === null) { // Everyone has the day off
+                $morningCandidates = $peopleInfo;
+            } else {
+                foreach ($peopleInfo as $person) {
+                    if ($person['isOff']) {
+                        // Person with day off is always a candidate
+                        $morningCandidates[] = $person;
+                    } elseif ($person['leaveAtTimestamp']) {
+                        $buffer = $person['leaveAtTimestamp'] - $earliestLeaveTimestamp;
+                        if ($buffer >= $PREP_TIME_SECONDS) {
+                            $morningCandidates[] = $person;
+                        } else {
+                            $allPassengers[] = $person['name'];
+                        }
+                    } else {
+                        // Should not happen if not off, but handle as passenger
+                        $allPassengers[] = $person['name'];
+                    }
+                }
+            }
+
+            // Step 4: Assign morning workers from candidates (flexible count)
+            usort($morningCandidates, fn($a, $b) => $a['shifts'] <=> $b['shifts']); // Fairness rotation
+
+            $morningWorkers = [];
+            $morningWorkerNames = [];
+            $numWorkersToAssign = min(count($morningCandidates), 2);
+
+            for ($i = 0; $i < $numWorkersToAssign; $i++) {
+                $worker = $morningCandidates[$i];
+                $morningWorkers[] = ['n' => $worker['name'], 't' => $worker['isOff'] ? 'Day Off' : 'Before Class'];
+                $morningWorkerNames[] = $worker['name'];
+                $totalShifts[$worker['name']]++;
+            }
+
+            // Everyone else is a passenger
             foreach ($peopleInfo as $person) {
                 if (!in_array($person['name'], $morningWorkerNames)) {
-                    $morningPassengers[] = $person['name'];
+                    $allPassengers[] = $person['name'];
                 }
             }
-            $morningPassengers = array_unique($morningPassengers);
+            $morningPassengerStr = implode(' & ', array_unique($allPassengers));
 
-            // === NIGHT SHIFT ASSIGNMENT ===
-            // Rule 1: Morning passengers MUST cook at night
-            // Rule 2: Pair them with person who has LEAST classes that day
-            
+            // Step 5: Assign Night Shift (based on fairness)
+            $nightCandidates = [];
+            // Everyone who was a passenger in the morning is a candidate for night shift
+            foreach ($peopleInfo as $person) {
+                if (in_array($person['name'], $allPassengers)) {
+                    $nightCandidates[] = $person;
+                }
+            }
+
+            // If not enough passengers, add morning workers with fewer class hours
+            if (count($nightCandidates) < 2) {
+                $morningWorkersInfo = [];
+                foreach($peopleInfo as $p) {
+                    if(in_array($p['name'], $morningWorkerNames)) $morningWorkersInfo[] = $p;
+                }
+                usort($morningWorkersInfo, fn($a, $b) => $a['classHours'] <=> $b['classHours']);
+                $nightCandidates = array_merge($nightCandidates, $morningWorkersInfo);
+            }
+
+            // Sort night candidates by fairness (shifts worked)
+            usort($nightCandidates, fn($a, $b) => $a['shifts'] <=> $b['shifts']);
+
             $nightWorkers = [];
-            
-            // First, assign all morning passengers to night
-            foreach ($morningPassengers as $passengerName) {
-                // Find this person's info to check if off day
-                $personInfo = null;
-                foreach ($peopleInfo as $p) {
-                    if ($p['name'] === $passengerName) {
-                        $personInfo = $p;
-                        break;
-                    }
-                }
-                
-                $nightWorkers[] = [
-                    'name' => $passengerName,
-                    'time' => $personInfo && $personInfo['isOff'] ? 'Free' : 'After class',
-                    'priority' => 0 // Highest priority (must work)
-                ];
-            }
-            
-            // If we need more workers, add people with least class hours
-            if (count($nightWorkers) < 2) {
-                $availableForNight = [];
-                foreach ($peopleInfo as $person) {
-                    if (!in_array($person['name'], array_column($nightWorkers, 'name'))) {
-                        $availableForNight[] = [
-                            'name' => $person['name'],
-                            'time' => $person['isOff'] ? 'Free' : 'After class',
-                            'priority' => $person['classHours'] * 10 + $person['shifts'] // Less class hours = higher priority
-                        ];
-                    }
-                }
-                
-                usort($availableForNight, function($a, $b) {
-                    return $a['priority'] - $b['priority'];
-                });
-                
-                foreach ($availableForNight as $person) {
-                    if (count($nightWorkers) >= 2) break;
-                    $nightWorkers[] = $person;
-                }
-            }
-            
-            $finalNightWorkers = [];
             $nightWorkerNames = [];
-            foreach ($nightWorkers as $worker) {
-                $finalNightWorkers[] = [
-                    'n' => $worker['name'],
-                    't' => $worker['time']
-                ];
+            $numNightWorkers = min(count($nightCandidates), 2);
+
+            for ($i = 0; $i < $numNightWorkers; $i++) {
+                $worker = $nightCandidates[$i];
+                $nightWorkers[] = ['n' => $worker['name'], 't' => $worker['isOff'] ? 'Free' : 'After Class'];
                 $nightWorkerNames[] = $worker['name'];
                 $totalShifts[$worker['name']]++;
             }
 
-            // === PASSENGER ASSIGNMENT ===
-            // Identify who is NOT working in the morning
-            $morningPassengersList = [];
-            foreach ($peopleInfo as $person) {
-                if (!in_array($person['name'], $morningWorkerNames)) {
-                    $morningPassengersList[] = $person['name'];
-                }
-            }
-            $passengerM = !empty($morningPassengersList) ? implode(' & ', $morningPassengersList) : 'None';
-
-            // Identify who is NOT working in the night
-            $nightPassengersList = [];
+            // Final passenger is whoever is not working at night
+            $nightPassengerStr = 'None';
             foreach ($peopleInfo as $person) {
                 if (!in_array($person['name'], $nightWorkerNames)) {
-                    $nightPassengersList[] = $person['name'];
+                    $nightPassengerStr = $person['name'];
+                    break;
                 }
             }
-            $passengerN = !empty($nightPassengersList) ? implode(' & ', $nightPassengersList) : 'None';
 
             $plan[$dayIndex] = [
-                'morning' => $finalMorningWorkers,
-                'night' => $finalNightWorkers,
-                'passenger_m' => $passengerM,
-                'passenger_n' => $passengerN
+                'morning' => $morningWorkers,
+                'night' => $nightWorkers,
+                'passenger_m' => $morningPassengerStr,
+                'passenger_n' => $nightPassengerStr
             ];
         }
 

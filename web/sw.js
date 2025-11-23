@@ -56,25 +56,36 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
     // Ignore API calls (handled by JS) and non-GET
-    if (url.pathname.includes('/server/') || event.request.method !== 'GET') {
+    if (url.pathname.startsWith('/roomOS/server/') || request.method !== 'GET') {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request).then((cached) => {
-            const networkFetch = fetch(event.request).then((response) => {
-                // Update cache
-                if (response.ok) {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, clone);
-                    });
+    // Strategy: Cache First for cross-origin requests (like Google Fonts)
+    // This prevents CORS issues with opaque responses.
+    if (url.origin !== self.location.origin) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(async (cache) => {
+                const cachedResponse = await cache.match(request);
+                if (cachedResponse) {
+                    return cachedResponse;
                 }
-                return response;
-            });
-
-            // Return cached if available, else network
-            return cached || networkFetch;
-        })
-    );
+                // Not in cache, fetch from network, cache it, and return it.
+                // The response will be "opaque", but we can still cache it.
+                const networkResponse = await fetch(request);
+                cache.put(request, networkResponse.clone());
+                return networkResponse;
+            })
+        );
+        return; // Stop further execution for cross-origin requests
+    }
+    // Strategy: Stale-While-Revalidate for your own app assets (CSS, JS, etc.)
+    // This serves from cache immediately for speed, then updates the cache in the background.
+    event.respondWith(caches.open(CACHE_NAME).then(async (cache) => {
+        const cachedResponse = await cache.match(request);
+        const networkResponsePromise = fetch(request).then((networkResponse) => {
+            cache.put(request, networkResponse.clone());
+            return networkResponse;
+        });
+        return cachedResponse || networkResponsePromise;
+    }));
 });

@@ -7,6 +7,19 @@ class AuthController {
         $this->pdo = $pdo;
     }
 
+    private function getUserIdFromToken() {
+        $headers = getallheaders();
+        if (!isset($headers['Authorization'])) return null;
+        
+        $token = str_replace('Bearer ', '', $headers['Authorization']);
+        
+        $stmt = $this->pdo->prepare("SELECT user_id FROM sessions WHERE token = ? AND expires_at > NOW()");
+        $stmt->execute([$token]);
+        $session = $stmt->fetch();
+        
+        return $session ? $session['user_id'] : null;
+    }
+
     public function register() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
@@ -99,5 +112,51 @@ class AuthController {
                 'group_id' => $user['group_id']
             ]
         ]);
+    }
+
+    public function resetPassword() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents("php://input"), true);
+        $currentPassword = $data['current_password'] ?? null;
+        $newPassword = $data['new_password'] ?? null;
+
+        if (!$currentPassword || !$newPassword) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Current and new passwords are required.']);
+            return;
+        }
+
+        // Fetch the user's current hashed password
+        $stmt = $this->pdo->prepare("SELECT password_hash FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+
+        if (!$user) {
+            http_response_code(404);
+            echo json_encode(['error' => 'User not found.']);
+            return;
+        }
+
+        // Verify the current password
+        if (!password_verify($currentPassword, $user['password_hash'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Incorrect current password.']);
+            return;
+        }
+
+        // Hash the new password
+        $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+
+        // Update the password in the database
+        $stmt = $this->pdo->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+        $stmt->execute([$newPasswordHash, $userId]);
+
+        echo json_encode(['message' => 'Password updated successfully.']);
     }
 }
