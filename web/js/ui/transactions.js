@@ -37,9 +37,45 @@ export async function renderTransactions() {
         const totalExpenses = currentMonthTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
 
+        // Calculate total debt and surplus first
+        let totalDebt = 0;
+        let totalSurplus = 0;
+        
+        if (balances && balances.length > 0) {
+            balances.forEach(balance => {
+                const amount = parseFloat(balance.balance);
+                if (amount > 0) {
+                    totalSurplus += amount;
+                } else if (amount < 0) {
+                    totalDebt += Math.abs(amount);
+                }
+            });
+        }
+
         let html = `
             <div class="fade-in" style="padding-bottom: 80px;">
-                <h1 style="margin-bottom: 24px; font-size: 1.8rem;">Expenses</h1>
+                <!-- Header with inline Debt & Surplus -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px;">
+                    <h1 style="margin: 0; font-size: 1.8rem;">Expenses</h1>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <!-- Debt (Red) -->
+                        <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: var(--radius-md); padding: 10px 16px; color: white; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph-bold ph-trend-down" style="font-size: 1.15rem;"></i>
+                            </div>
+                            <div style="font-size: 1.15rem; font-weight: 700;">₹${totalDebt.toFixed(0)}</div>
+                        </div>
+                        
+                        <!-- Surplus (Green) -->
+                        <div style="background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%); border-radius: var(--radius-md); padding: 10px 16px; color: white; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph-bold ph-trend-up" style="font-size: 1.15rem;"></i>
+                            </div>
+                            <div style="font-size: 1.15rem; font-weight: 700;">₹${totalSurplus.toFixed(0)}</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Total Expenses Card -->
                 <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); cursor: pointer; position: relative; margin-bottom: 32px; padding: 24px;" onclick="app.navigate('expense-analytics')">
@@ -116,27 +152,32 @@ export async function renderTransactions() {
                 </button>
 
                 <!-- Recent List -->
-                <h3 style="margin-bottom: 20px; font-size: 1.3rem; color: var(--text-primary);">Your Recent Expenses</h3>
+                <h3 style="margin-bottom: 20px; font-size: 1.3rem; color: var(--text-primary);">Recent Expenses</h3>
                 <div class="transactions-list">
         `;
 
-        // Filter to show only current user's transactions
-        if (myTransactions.length === 0) {
-            html += '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">You haven\'t added any expenses yet.</p>';
+        // Show all group transactions
+        if (transactions.length === 0) {
+            html += '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses added yet.</p>';
         } else {
-            myTransactions.forEach(t => {
+            transactions.forEach(t => {
                 const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
                 const splitBetweenNames = splitBetween.map(id => {
                     const member = members.find(m => m.id === id);
                     return member ? member.name : 'Unknown';
                 }).join(', ');
                 
+                // Find the payer's name
+                const payer = members.find(m => m.id === t.user_id);
+                const payerName = payer ? payer.name : 'Unknown';
+                const isPaidByCurrentUser = t.user_id === currentUser.id;
+                
                 html += `
                     <div class="card transaction-item" 
                          data-id="${t.id}"
                          data-description="${t.description}"
                          data-amount="${t.amount}"
-                         data-payer="${currentUser.name}"
+                         data-payer="${payerName}"
                          data-split-between='${JSON.stringify(splitBetween)}'
                          data-split-names="${splitBetweenNames}"
                          data-date="${t.created_at}"
@@ -145,13 +186,13 @@ export async function renderTransactions() {
                          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
                         <div style="flex: 1;">
                             <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-primary);">${t.description}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by You</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by ${isPaidByCurrentUser ? 'You' : payerName}</div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 14px;">
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${parseFloat(t.amount).toFixed(2)}</div>
-                            <button class="delete-transaction-btn" data-id="${t.id}" style="background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="event.stopPropagation()">
+                            ${isPaidByCurrentUser ? `<button class="delete-transaction-btn" data-id="${t.id}" style="background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="event.stopPropagation()">
                                 <i class="ph ph-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                     </div>
                 `;

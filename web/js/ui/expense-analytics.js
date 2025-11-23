@@ -7,16 +7,28 @@ export async function renderExpenseAnalytics() {
 
     try {
         const token = localStorage.getItem('token');
-        const transRes = await apiCall('/transactions/list', 'GET', null, token);
+        const [transRes, membersRes] = await Promise.all([
+            apiCall('/transactions/list', 'GET', null, token),
+            apiCall('/group/members', 'GET', null, token)
+        ]);
         
         const transactions = transRes.transactions;
+        const members = membersRes.members;
         const currentUser = getState().user;
         
-        // Filter only current user's transactions
-        const myTransactions = transactions.filter(t => t.user_id === currentUser.id);
+        // Filter transactions where current user is in the split_between array
+        const myTransactions = transactions.filter(t => {
+            const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
+            return splitBetween.includes(currentUser.id);
+        });
         
-        // Calculate total expenses
-        const totalExpenses = myTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        // Calculate total expenses (user's share only)
+        let totalExpenses = 0;
+        myTransactions.forEach(t => {
+            const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
+            const myShare = splitBetween.length > 0 ? parseFloat(t.amount) / splitBetween.length : 0;
+            totalExpenses += myShare;
+        });
         
         // Group transactions by month
         const monthlyData = {};
@@ -33,8 +45,10 @@ export async function renderExpenseAnalytics() {
                 };
             }
             
-            monthlyData[monthKey].total += parseFloat(t.amount);
-            monthlyData[monthKey].transactions.push(t);
+            const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
+            const myShare = splitBetween.length > 0 ? parseFloat(t.amount) / splitBetween.length : 0;
+            monthlyData[monthKey].total += myShare;
+            monthlyData[monthKey].transactions.push({...t, myShare});
         });
         
         // Sort months in descending order (newest first)
@@ -47,17 +61,17 @@ export async function renderExpenseAnalytics() {
                     <button onclick="app.navigate('transactions')" class="icon-btn" style="background: var(--bg-input); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <i class="ph ph-arrow-left"></i>
                     </button>
-                    <h1 style="margin: 0;">Expense Analytics</h1>
+                    <h1 style="margin: 0;">My Expense Analytics</h1>
                 </div>
 
                 <!-- Total Expenses Summary -->
                 <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-bottom: 32px; padding: 24px;">
-                    <div style="color: rgba(255,255,255,0.9); font-size: 0.95rem; margin-bottom: 8px;">Total Expenses (All Time)</div>
+                    <div style="color: rgba(255,255,255,0.9); font-size: 0.95rem; margin-bottom: 8px;">Your Share of Expenses (All Time)</div>
                     <div style="font-size: 2.8rem; font-weight: 700; color: white; margin-bottom: 8px;">
                         ₹${totalExpenses.toFixed(2)}
                     </div>
                     <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
-                        ${myTransactions.length} transaction${myTransactions.length !== 1 ? 's' : ''}
+                        ${myTransactions.length} expense${myTransactions.length !== 1 ? 's' : ''} you're part of
                     </div>
                 </div>
 
@@ -105,13 +119,21 @@ export async function renderExpenseAnalytics() {
                     const date = new Date(t.created_at);
                     const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
                     
+                    // Find who paid
+                    const payer = members.find(m => m.id === t.user_id);
+                    const payerName = payer ? payer.name : 'Unknown';
+                    const isPaidByMe = t.user_id === currentUser.id;
+                    
                     html += `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-input); border-radius: var(--radius-md); margin-bottom: 10px;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px; font-size: 1rem;">${t.description}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate} • Paid by ${isPaidByMe ? 'You' : payerName}</div>
                             </div>
-                            <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${parseFloat(t.amount).toFixed(2)}</div>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${t.myShare.toFixed(2)}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">your share</div>
+                            </div>
                         </div>
                     `;
                 });

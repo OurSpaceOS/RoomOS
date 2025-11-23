@@ -886,6 +886,25 @@ section {
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
+.pricing-badge-secondary {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--secondary-gradient);
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+}
+
+.btn-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 .pricing-header {
     text-align: center;
     margin-bottom: var(--spacing-xl);
@@ -1238,16 +1257,35 @@ section {
 }
 
 @media (max-width: 768px) {
+
+    /* Navigation */
     .nav-links {
         display: none;
     }
 
     .mobile-menu-btn {
         display: flex;
+        padding: var(--spacing-sm);
+        min-width: 44px;
+        min-height: 44px;
     }
 
+    .nav-container {
+        padding: 0 var(--spacing-md);
+    }
+
+    /* Hero Section */
     .hero {
-        padding: calc(60px + var(--spacing-lg)) var(--spacing-md) var(--spacing-lg);
+        padding: calc(80px + var(--spacing-lg)) var(--spacing-md) var(--spacing-lg);
+        min-height: auto;
+    }
+
+    .hero-title {
+        font-size: clamp(2rem, 8vw, 3rem);
+    }
+
+    .hero-description {
+        font-size: clamp(0.95rem, 3vw, 1.1rem);
     }
 
     .hero-buttons {
@@ -1256,6 +1294,7 @@ section {
         max-width: 400px;
         margin-left: auto;
         margin-right: auto;
+        gap: var(--spacing-md);
     }
 
     .btn-hero-primary,
@@ -1263,78 +1302,316 @@ section {
     .btn-hero-secondary {
         width: 100%;
         justify-content: center;
+        padding: 14px 28px;
+        font-size: 1rem;
+        min-height: 48px;
     }
 
     .hero-stats {
-        flex-direction: column;
-        gap: var(--spacing-md);
-        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--spacing-lg);
+        justify-content: center;
         width: 100%;
     }
 
+    .stat {
+        text-align: center;
+        min-width: 120px;
+    }
+
     .hero-visual {
-        height: 300px;
+        height: 280px;
+        margin-top: var(--spacing-xl);
     }
 
     .floating-card {
         padding: var(--spacing-sm);
+        gap: var(--spacing-sm);
     }
 
     .card-icon {
-        font-size: 2rem;
+        font-size: 1.8rem;
     }
 
+    .card-title {
+        font-size: 0.85rem;
+    }
+
+    .card-amount {
+        font-size: 1.2rem;
+    }
+
+    /* Features Section */
     .features-grid {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
     }
 
+    .feature-card {
+        padding: var(--spacing-lg);
+    }
+
+    /* Demo Section */
     .demo-controls {
         flex-direction: column;
         width: 100%;
+        gap: var(--spacing-sm);
     }
 
     .demo-btn {
         width: 100%;
         justify-content: center;
+        padding: var(--spacing-md);
+        min-height: 48px;
     }
 
+    .phone-mockup {
+        max-width: 320px;
+    }
+
+    /* Download Section */
+    .btn-download {
+        padding: 14px 28px;
+        min-height: 48px;
+    }
+
+    .download-visual {
+        margin-top: var(--spacing-xl);
+    }
+
+    /* Pricing Section */
     .pricing-grid {
         grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
     }
 
     .pricing-card.featured {
         transform: scale(1);
     }
 
+    .pricing-card:hover {
+        transform: translateY(-8px);
+    }
+
+    .pricing-card.featured:hover {
+        transform: translateY(-8px);
+    }
+
+    /* CTA Section */
     .cta-buttons {
         flex-direction: column;
         width: 100%;
         max-width: 400px;
         margin-left: auto;
         margin-right: auto;
+        gap: var(--spacing-md);
     }
 
     .btn-cta-primary,
     .btn-cta-secondary {
         width: 100%;
+        min-height: 48px;
     }
 
+    /* Footer */
     .footer-content {
         grid-template-columns: 1fr;
+        gap: var(--spacing-xl);
     }
 
     .footer-bottom {
         flex-direction: column;
         text-align: center;
+        gap: var(--spacing-sm);
     }
 
+    .footer-links {
+        justify-content: center;
+    }
+
+    /* Sections */
     section {
         padding: var(--spacing-2xl) var(--spacing-md);
+    }
+
+    .section-header {
+        margin-bottom: var(--spacing-xl);
+    }
+
+    /* Scroll Indicator */
+    .scroll-indicator {
+        display: none;
     }
 }
 
 @media (max-width: 480px) {
+
+    /* Typography */
+    :root {
+        --spacing-xs: 0.375rem;
+        --spacing-sm: 0.75rem;
+        --spacing-md: 1rem;
+        --spacing-lg: 1.5rem;
+        --spacing-xl: 2rem;
+        --spacing-2xl: 3rem;
+        --spacing-3xl: 4rem;
+    }
+
+    /* Navigation */
+    .logo {
+        font-size: 1.25rem;
+    }
+
+    .logo svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .mobile-menu {
+        top: 70px;
+        padding: var(--spacing-md);
+    }
+
+    /* Hero Section */
+    .hero {
+        padding: calc(70px + var(--spacing-md)) var(--spacing-sm) var(--spacing-md);
+    }
+
+    .hero-title {
+        font-size: clamp(1.75rem, 10vw, 2.5rem);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .hero-description {
+        font-size: 0.9rem;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .hero-buttons {
+        max-width: 100%;
+        gap: var(--spacing-sm);
+    }
+
+    .btn-hero-primary,
+    .btn-hero-android,
+    .btn-hero-secondary {
+        padding: 12px 24px;
+        font-size: 0.95rem;
+    }
+
+    .hero-stats {
+        gap: var(--spacing-md);
+    }
+
+    .stat {
+        min-width: 100px;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .hero-visual {
+        height: 240px;
+    }
+
+    .floating-card {
+        padding: 8px;
+        border-radius: var(--radius-sm);
+    }
+
+    .card-icon {
+        font-size: 1.5rem;
+    }
+
+    .card-title {
+        font-size: 0.75rem;
+    }
+
+    .card-amount {
+        font-size: 1rem;
+    }
+
+    .card-status {
+        font-size: 0.75rem;
+    }
+
+    /* Sections */
+    section {
+        padding: var(--spacing-xl) var(--spacing-sm);
+    }
+
+    .section-label {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+
+    .section-title {
+        font-size: clamp(1.5rem, 8vw, 2.5rem);
+    }
+
+    .section-description {
+        font-size: 0.9rem;
+    }
+
+    /* Features */
+    .feature-card {
+        padding: var(--spacing-md);
+    }
+
+    .feature-icon svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .feature-title {
+        font-size: 1.1rem;
+    }
+
+    .feature-description {
+        font-size: 0.85rem;
+    }
+
+    /* Demo Section */
     .phone-mockup {
+        max-width: 260px;
+    }
+
+    .demo-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .demo-btn-icon {
+        font-size: 1.25rem;
+    }
+
+    .demo-btn-text {
+        font-size: 0.9rem;
+    }
+
+    .demo-feature {
+        padding: var(--spacing-sm);
+    }
+
+    .demo-feature-icon {
+        font-size: 1.5rem;
+    }
+
+    .demo-feature-content h4 {
+        font-size: 0.95rem;
+    }
+
+    .demo-feature-content p {
+        font-size: 0.8rem;
+    }
+
+    /* Download Section */
+    .phone-showcase {
         max-width: 280px;
     }
 
@@ -1344,7 +1621,188 @@ section {
 
     .btn-download {
         flex-direction: column;
-        padding: 20px;
+        padding: 16px;
+        gap: var(--spacing-sm);
+    }
+
+    .btn-download svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .download-label {
+        font-size: 0.7rem;
+    }
+
+    .download-store {
+        font-size: 1rem;
+    }
+
+    /* Pricing */
+    .pricing-card {
+        padding: var(--spacing-lg);
+    }
+
+    .pricing-name {
+        font-size: 1.2rem;
+    }
+
+    .price-amount {
+        font-size: 2.5rem;
+    }
+
+    .pricing-features li {
+        font-size: 0.85rem;
+        padding: 8px 0;
+    }
+
+    .btn-pricing {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+
+    /* CTA */
+    .cta-title {
+        font-size: 1.75rem;
+    }
+
+    .cta-description {
+        font-size: 0.9rem;
+    }
+
+    .btn-cta-primary,
+    .btn-cta-secondary {
+        padding: 14px 28px;
+        font-size: 0.95rem;
+    }
+
+    /* Footer */
+    .footer {
+        padding: var(--spacing-xl) var(--spacing-sm) var(--spacing-md);
+    }
+
+    .footer-logo {
+        font-size: 1.25rem;
+    }
+
+    .footer-logo svg {
+        width: 32px;
+        height: 32px;
+    }
+
+    .footer-description {
+        font-size: 0.85rem;
+    }
+
+    .footer-section h4 {
+        font-size: 1rem;
+    }
+
+    .footer-section a {
+        font-size: 0.85rem;
+    }
+
+    .footer-bottom {
+        font-size: 0.8rem;
+        padding-top: var(--spacing-md);
+    }
+
+    .footer-bottom p {
+        font-size: 0.8rem !important;
+    }
+}
+
+/* ===== MOBILE-SPECIFIC ENHANCEMENTS ===== */
+@media (max-width: 768px) {
+
+    /* Touch-friendly interactions */
+    * {
+        -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+    }
+
+    /* Prevent text selection on buttons */
+    button,
+    a,
+    .btn-primary,
+    .btn-hero-primary,
+    .btn-hero-android,
+    .btn-hero-secondary {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Better button press feedback */
+    button:active,
+    a:active,
+    .btn-primary:active,
+    .btn-hero-primary:active,
+    .btn-hero-android:active,
+    .btn-hero-secondary:active {
+        transform: scale(0.98);
+    }
+
+    /* Disable hover effects on touch devices */
+    .feature-card:hover {
+        transform: none;
+    }
+
+    .feature-card:active {
+        transform: scale(0.98);
+        background: var(--bg-card-hover);
+    }
+
+    /* Mobile-optimized animations */
+    .floating-card {
+        animation: none;
+    }
+
+    /* Reduce motion for better performance */
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/* ===== EXTRA SMALL SCREENS ===== */
+@media (max-width: 360px) {
+    .hero-title {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+    }
+
+    .btn-hero-primary,
+    .btn-hero-android,
+    .btn-hero-secondary {
+        font-size: 0.9rem;
+        padding: 10px 20px;
+    }
+
+    .phone-mockup {
+        max-width: 220px;
+    }
+
+    .floating-card {
+        display: none;
+    }
+
+    .hero-visual {
+        height: 200px;
     }
 }
 
@@ -1355,7 +1813,8 @@ section {
 .modal {
     position: fixed;
     inset: 0;
-    display: none;              /* hidden by default */
+    display: none;
+    /* hidden by default */
     align-items: center;
     justify-content: center;
     z-index: 1000;
@@ -1558,6 +2017,7 @@ section {
         opacity: 0;
         transform: translateY(14px) scale(0.98);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
