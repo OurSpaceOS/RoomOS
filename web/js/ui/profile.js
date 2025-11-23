@@ -40,7 +40,7 @@ export async function renderProfile() {
 
     const html = `
       <div class="fade-in" style="padding-bottom: 100px;">
-        <h1 style="margin-bottom: var(--space-md); font-size: 1.75rem; font-weight: 800;">Profile</h1>
+
 
         <!-- User Info Card -->
         <div class="card">

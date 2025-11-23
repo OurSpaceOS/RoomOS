@@ -82,11 +82,20 @@ export function navigate(view) {
     // Update header title based on view
     const headerTitle = document.querySelector('.app-header h1');
     if (headerTitle) {
-        if (view === 'chat') {
-            headerTitle.textContent = 'Chat';
-        } else {
-            headerTitle.textContent = 'RoomOS';
-        }
+        const viewTitles = {
+            dashboard: 'RoomOS',
+            roster: 'Weekly Plan',
+            transactions: 'Money',
+            crew: 'Crew',
+            rules: 'Rules',
+            profile: 'Profile',
+            'expense-analytics': 'Analytics',
+            chat: 'Chat',
+            login: 'RoomOS',
+            group_setup: 'Setup',
+            'forgot-password': 'Reset Password'
+        };
+        headerTitle.textContent = viewTitles[view] || 'RoomOS';
     }
 
     // Hide/Show bottom nav and chat button based on view
@@ -124,7 +133,7 @@ export function navigate(view) {
             renderLogin();
             break;
         case 'forgot-password':
-            renderForgotPassword();
+            // renderForgotPassword(); // Uncomment when implemented
             break;
         case 'group_setup':
             renderGroupSetup();

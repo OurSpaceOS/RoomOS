@@ -19,8 +19,7 @@ export async function renderRoster() {
 
         let html = `
             <div class="fade-in" style="padding-bottom: 80px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg);">
-                    <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800;">Weekly Plan</h1>
+                <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: var(--space-lg);">
                     ${isAdmin ? '<button id="regenerate-plan-btn" class="icon-btn" title="Regenerate Plan"><i class="ph ph-arrows-clockwise"></i></button>' : ''}
                 </div>
                 <div id="roster-list" class="roster-grid">
@@ -125,6 +124,25 @@ export async function renderRoster() {
 
         html += '</div></div>';
         container.innerHTML = html;
+
+        // Make entire cards clickable to toggle details
+        document.querySelectorAll('.roster-card-v2').forEach(card => {
+            const details = card.querySelector('details');
+            if (details) {
+                // Add cursor pointer to indicate clickability
+                card.style.cursor = 'pointer';
+                
+                card.addEventListener('click', (e) => {
+                    // Don't toggle if clicking on the summary itself (to avoid double-toggle)
+                    if (e.target.closest('.details-summary')) {
+                        return;
+                    }
+                    
+                    // Toggle the details
+                    details.open = !details.open;
+                });
+            }
+        });
 
         // Event listener for the new regenerate button
         const regenBtn = document.getElementById('regenerate-plan-btn');

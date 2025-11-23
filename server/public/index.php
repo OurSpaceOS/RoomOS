@@ -118,6 +118,7 @@ $routes = [
     '/transactions/add' => ['TransactionController', 'add'],
     '/transactions/list' => ['TransactionController', 'list'],
     '/transactions/delete' => ['TransactionController', 'delete'],
+    '/transactions/recalculate' => ['TransactionController', 'recalculate'],
 
     // Chat
     '/chat/send' => ['ChatController', 'send'],

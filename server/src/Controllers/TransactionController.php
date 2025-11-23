@@ -305,6 +305,119 @@ class TransactionController {
         }
     }
     
+    
+    public function recalculate() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $user = $this->getUserGroup($userId);
+        
+        try {
+            $this->pdo->beginTransaction();
+            
+            // 1. Reset all balances for this group to zero
+            $stmt = $this->pdo->prepare("UPDATE balances SET balance = 0 WHERE group_id = ?");
+            $stmt->execute([$user['group_id']]);
+            
+            // 2. Get all transactions for this group in chronological order
+            $stmt = $this->pdo->prepare("
+                SELECT * FROM transactions 
+                WHERE group_id = ? 
+                ORDER BY created_at ASC
+            ");
+            $stmt->execute([$user['group_id']]);
+            $transactions = $stmt->fetchAll();
+            
+            // 3. Replay each transaction to rebuild balances
+            foreach ($transactions as $transaction) {
+                $amount = floatval($transaction['amount']);
+                $payerId = $transaction['user_id'];
+                
+                // Get split_between data
+                $splitBetween = $transaction['split_between'] 
+                    ? json_decode($transaction['split_between'], true) 
+                    : null;
+                
+                if ($splitBetween === null) {
+                    // Get all members if not specified
+                    $stmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ?");
+                    $stmt->execute([$user['group_id']]);
+                    $splitBetween = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                }
+                
+                $memberCount = count($splitBetween);
+                
+                if ($memberCount > 0) {
+                    // Check if only one person is selected and it's not the payer
+                    $isDirectPayment = ($memberCount === 1 && !in_array($payerId, $splitBetween));
+                    
+                    if ($isDirectPayment) {
+                        // Direct payment: selected person owes the full amount
+                        $selectedUserId = $splitBetween[0];
+                        
+                        // Ensure balance rows exist
+                        foreach ([$payerId, $selectedUserId] as $uid) {
+                            $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                            $stmt->execute([$user['group_id'], $uid]);
+                            if (!$stmt->fetch()) {
+                                $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                                $stmt->execute([$user['group_id'], $uid]);
+                            }
+                        }
+                        
+                        // Payer gets +amount
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$amount, $user['group_id'], $payerId]);
+                        
+                        // Selected person gets -amount
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$amount, $user['group_id'], $selectedUserId]);
+                        
+                    } else {
+                        // Split payment
+                        $share = $amount / $memberCount;
+                        
+                        foreach ($splitBetween as $mid) {
+                            // Ensure balance row exists
+                            $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                            $stmt->execute([$user['group_id'], $mid]);
+                            if (!$stmt->fetch()) {
+                                $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                                $stmt->execute([$user['group_id'], $mid]);
+                            }
+                            
+                            if ($mid == $payerId) {
+                                // Payer: + (Amount - Share)
+                                $change = $amount - $share;
+                            } else {
+                                // Others: - Share
+                                $change = -$share;
+                            }
+                            
+                            $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
+                            $stmt->execute([$change, $user['group_id'], $mid]);
+                        }
+                    }
+                }
+            }
+            
+            $this->pdo->commit();
+            echo json_encode([
+                'message' => 'Balances recalculated successfully',
+                'transactions_processed' => count($transactions)
+            ]);
+            
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to recalculate balances: ' . $e->getMessage()]);
+        }
+    }
+    
     private function getUserName($id) {
          $stmt = $this->pdo->prepare("SELECT name FROM users WHERE id = ?");
          $stmt->execute([$id]);

@@ -61,7 +61,7 @@ export async function renderExpenseAnalytics() {
                     <button onclick="app.navigate('transactions')" class="icon-btn" style="background: var(--bg-input); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <i class="ph ph-arrow-left"></i>
                     </button>
-                    <h1 style="margin: 0;">My Expense Analytics</h1>
+
                 </div>
 
                 <!-- Total Expenses Summary -->

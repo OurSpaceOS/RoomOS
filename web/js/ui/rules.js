@@ -21,8 +21,7 @@ export function renderRules() {
 
     let html = `
         <div class="fade-in" style="padding-bottom: 80px;">
-            <h1 style="margin-bottom: var(--space-md); font-size: 1.75rem; font-weight: 800;">House Rules</h1>
-            <p style="margin-bottom: var(--space-xl); color: var(--text-secondary); font-size: 0.95rem;">The 10 commandments of our shared space</p>
+
             
             <div class="card" style="padding: 0; overflow: hidden;">
     `;

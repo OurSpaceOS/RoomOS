@@ -54,26 +54,22 @@ export async function renderTransactions() {
 
         let html = `
             <div class="fade-in" style="padding-bottom: 80px;">
-                <!-- Header with inline Debt & Surplus -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 12px;">
-                    <h1 style="margin: 0; font-size: 1.8rem;">Expenses</h1>
+                <!-- Debt & Surplus Stats -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                    <!-- Debt (Red) -->
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: var(--radius-lg); padding: 16px; color: white; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(238, 90, 111, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 8px; opacity: 0.9; font-size: 0.9rem; font-weight: 600;">
+                            <i class="ph-bold ph-trend-down"></i> You Owe
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 800;">₹${totalDebt.toFixed(0)}</div>
+                    </div>
                     
-                    <div style="display: flex; gap: 10px;">
-                        <!-- Debt (Red) -->
-                        <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: var(--radius-md); padding: 10px 16px; color: white; display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="ph-bold ph-trend-down" style="font-size: 1.15rem;"></i>
-                            </div>
-                            <div style="font-size: 1.15rem; font-weight: 700;">₹${totalDebt.toFixed(0)}</div>
+                    <!-- Surplus (Green) -->
+                    <div style="background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%); border-radius: var(--radius-lg); padding: 16px; color: white; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(55, 178, 77, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 8px; opacity: 0.9; font-size: 0.9rem; font-weight: 600;">
+                            <i class="ph-bold ph-trend-up"></i> Owed to You
                         </div>
-                        
-                        <!-- Surplus (Green) -->
-                        <div style="background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%); border-radius: var(--radius-md); padding: 10px 16px; color: white; display: flex; align-items: center; gap: 10px;">
-                            <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.25); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="ph-bold ph-trend-up" style="font-size: 1.15rem;"></i>
-                            </div>
-                            <div style="font-size: 1.15rem; font-weight: 700;">₹${totalSurplus.toFixed(0)}</div>
-                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 800;">₹${totalSurplus.toFixed(0)}</div>
                     </div>
                 </div>
 
@@ -97,7 +93,13 @@ export async function renderTransactions() {
 
                 <!-- Individual Balances -->
                 <div class="card" style="margin-bottom: 28px; padding: 20px;">
-                    <h3 style="font-size: 1.15rem; margin: 0 0 20px 0; color: var(--text-primary); font-weight: 600;">Balance Breakdown</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="font-size: 1.15rem; margin: 0; color: var(--text-primary); font-weight: 600;">Balance Breakdown</h3>
+                        <button id="recalculate-btn" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 8px 14px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; transition: all var(--transition-fast);">
+                            <i class="ph ph-arrows-clockwise"></i>
+                            <span>Recalculate</span>
+                        </button>
+                    </div>
         `;
 
         // Show individual balances
@@ -540,6 +542,33 @@ export async function renderTransactions() {
                 expenseDetailModal.style.display = 'none';
             }
         });
+
+        // Recalculate Balance Handler
+        const recalculateBtn = document.getElementById('recalculate-btn');
+        if (recalculateBtn) {
+            recalculateBtn.addEventListener('click', async () => {
+                const originalHTML = recalculateBtn.innerHTML;
+                recalculateBtn.innerHTML = '<i class="ph ph-spinner"></i><span>Recalculating...</span>';
+                recalculateBtn.disabled = true;
+
+                try {
+                    const token = localStorage.getItem('token');
+                    const response = await apiCall('/transactions/recalculate', 'POST', null, token);
+                    
+                    if (response.message) {
+                        showToast(response.message + ` (${response.transactions_processed} transactions)`, 'success');
+                        // Refresh the page
+                        setTimeout(() => {
+                            renderTransactions();
+                        }, 500);
+                    }
+                } catch (error) {
+                    showToast('Failed to recalculate: ' + error.message, 'error');
+                    recalculateBtn.innerHTML = originalHTML;
+                    recalculateBtn.disabled = false;
+                }
+            });
+        }
 
     } catch (error) {
         container.innerHTML = `

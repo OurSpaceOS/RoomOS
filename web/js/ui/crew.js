@@ -35,7 +35,6 @@ export async function renderCrew() {
         });
 
         let html = '<div class="fade-in" style="padding-bottom: 80px;">';
-        html += '<h1 style="margin-bottom: var(--space-lg); font-size: 1.75rem; font-weight: 800;">Crew Members</h1>';
 
         members.forEach(member => {
             const shifts = shiftCounts[member.name] || 0;

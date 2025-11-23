@@ -351,7 +351,20 @@ body {
   padding: 12px 8px;
   box-shadow: var(--shadow-xl);
 
-  z-index: 100;
+  z-index: 1000;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
 
 .nav-item {
@@ -368,8 +381,9 @@ body {
   font-size: 0.7rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-base);
   position: relative;
+  overflow: hidden;
 }
 
 .nav-item::before {
@@ -379,11 +393,26 @@ body {
   background: var(--accent-gradient);
   border-radius: var(--radius-md);
   opacity: 0;
-  transition: opacity var(--transition-fast);
+  transition: opacity var(--transition-base);
+}
+
+/* Active indicator dot */
+.nav-item::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  background: var(--accent-primary);
+  border-radius: 50%;
+  opacity: 0;
+  transform: scale(0);
+  transition: all var(--transition-base);
 }
 
 .nav-item:hover {
   color: var(--text-secondary);
+  transform: translateY(-2px);
 }
 
 .nav-item.active {
@@ -391,18 +420,36 @@ body {
 }
 
 .nav-item.active::before {
-  opacity: 0.1;
+  opacity: 0.15;
+}
+
+.nav-item.active::after {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .nav-icon {
   font-size: 1.5rem;
-  transition: transform var(--transition-fast);
+  transition: transform var(--transition-base);
   position: relative;
   z-index: 1;
 }
 
 .nav-item.active .nav-icon {
   transform: translateY(-2px) scale(1.1);
+  animation: iconBounce 0.5s ease-out;
+}
+
+@keyframes iconBounce {
+
+  0%,
+  100% {
+    transform: translateY(-2px) scale(1.1);
+  }
+
+  50% {
+    transform: translateY(-6px) scale(1.15);
+  }
 }
 
 /* --- TOAST NOTIFICATIONS --- */
@@ -783,7 +830,7 @@ body {
    Roster Styles
    ========================================================================== */
 
- .roster-grid {
+.roster-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-lg);
@@ -868,7 +915,8 @@ body {
 }
 
 .roster-card-v2__details {
-  margin-top: auto; /* Pushes details to the bottom */
+  margin-top: auto;
+  /* Pushes details to the bottom */
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -880,7 +928,8 @@ body {
   align-items: center;
   font-weight: 600;
   color: var(--text-secondary);
-  list-style: none; /* Hide default arrow */
+  list-style: none;
+  /* Hide default arrow */
 }
 
 .details-summary::-webkit-details-marker {
@@ -891,7 +940,7 @@ body {
   transition: transform var(--transition-fast);
 }
 
-details[open] > .details-summary i {
+details[open]>.details-summary i {
   transform: rotate(180deg);
 }
 
@@ -954,7 +1003,8 @@ details[open] > .details-summary i {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  list-style: none; /* Hide default arrow */
+  list-style: none;
+  /* Hide default arrow */
 }
 
 .details-summary-profile::-webkit-details-marker {
@@ -971,7 +1021,7 @@ details[open] > .details-summary i {
   transition: transform var(--transition-fast);
 }
 
-details[open] > .details-summary-profile i {
+details[open]>.details-summary-profile i {
   transform: rotate(180deg);
 }
 
