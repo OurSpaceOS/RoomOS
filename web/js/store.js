@@ -21,8 +21,18 @@ export function initDB() {
             }
         };
 
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e);
+        request.onsuccess = (e) => {
+            const db = e.target.result;
+            db.onclose = () => {
+                console.log('Database connection closed.');
+                dbPromise = null;
+            };
+            resolve(db);
+        };
+        request.onerror = (e) => {
+            console.error("IndexedDB error:", e.target.error);
+            reject(new Error("Could not access local storage. Your browser settings might be blocking it, or you may be in private browsing mode."));
+        };
     });
 
     return dbPromise;
@@ -33,9 +43,8 @@ export async function cacheData(endpoint, data) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction('api_cache', 'readwrite');
         const store = tx.objectStore('api_cache');
-        store.put({ endpoint, data, timestamp: Date.now() });
         tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = () => reject(new Error("Failed to save to local storage."));
     });
 }
 
@@ -46,7 +55,7 @@ export async function getCachedData(endpoint) {
         const store = tx.objectStore('api_cache');
         const request = store.get(endpoint);
         request.onsuccess = () => resolve(request.result ? request.result.data : null);
-        request.onerror = () => reject(request.error);
+        request.onerror = () => reject(new Error("Failed to read from local storage."));
     });
 }
 
@@ -55,9 +64,8 @@ export async function queueAction(endpoint, method, body) {
     return new Promise((resolve, reject) => {
         const tx = db.transaction('pending_actions', 'readwrite');
         const store = tx.objectStore('pending_actions');
-        store.add({ endpoint, method, body, timestamp: Date.now() });
         tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = () => reject(new Error("Failed to queue action in local storage."));
     });
 }
 
@@ -68,7 +76,7 @@ export async function getPendingActions() {
         const store = tx.objectStore('pending_actions');
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+        request.onerror = () => reject(new Error("Failed to read pending actions from local storage."));
     });
 }
 
@@ -83,6 +91,6 @@ export async function clearPendingAction(key) {
         const store = tx.objectStore('pending_actions');
         store.clear();
         tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = () => reject(new Error("Failed to clear pending actions from local storage."));
     });
 }

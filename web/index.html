@@ -84,6 +84,30 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+        // Global fetch interceptor to handle session expiry
+        const { fetch: originalFetch } = window;
+        window.fetch = async (...args) => {
+            let response;
+            try {
+                response = await originalFetch(...args);
+
+                // Check for 401 Unauthorized or 403 Forbidden to redirect to login
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Session expired or invalid. Navigating to login.');
+                    // Clear invalid token and navigate to the login view using the app's router
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('group'); // Also clear group info
+                    window.app.navigate('login');
+                    return new Response(JSON.stringify({ message: 'Session expired. Redirecting to login...' }), { status: response.status, headers: { 'Content-Type': 'application/json' } });
+                }
+            } catch (error) {
+                // Handle network errors or other fetch-related issues
+                throw error;
+            }
+            return response;
+        };
+    </script>
     <script type="module" src="js/app.js"></script>
 </body>
 

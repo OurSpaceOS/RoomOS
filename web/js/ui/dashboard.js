@@ -1,9 +1,15 @@
 import { apiCall } from '../api.js';
 import { showToast } from './toast.js';
 
+let dateTimeInterval = null;
+
 export async function renderDashboard() {
     const container = document.getElementById('view-container');
     container.innerHTML = '<div class="flex-center p-4"><div class="loader">Loading...</div></div>';
+
+    if (dateTimeInterval) {
+        clearInterval(dateTimeInterval);
+    }
 
     try {
         const token = localStorage.getItem('token');
@@ -31,7 +37,7 @@ export async function renderDashboard() {
         night = night.map(x => typeof x === 'string' ? { n: x, t: '' } : x);
 
         // Determine Current Shift (Morning < 4PM)
-        const h = new Date().getHours();
+        const h = parseInt(new Date().toLocaleTimeString('en-GB', { timeZone: "Asia/Kolkata", hour: '2-digit', hour12: false }), 10);
         const isMorn = h < 16;
         const activeTeam = isMorn ? morning : night;
         const activePassenger = isMorn ? passengerM : passengerN;
@@ -46,6 +52,7 @@ export async function renderDashboard() {
                 <!-- Live Protocol -->
                 <div class="card">
                     <h2>Live Protocol</h2>
+                    <div id="live-datetime" style="display: flex; justify-content: center; gap: 8px; margin-top: 20px; margin-bottom: 20px; flex-wrap: wrap;"></div>
                     <span class="status-big" id="dash-status">${teamNames}</span>
                     <div class="status-row">
                         <span style="font-size:0.85rem; color:var(--text-secondary)">Active Team (Cook+Clean)</span>
@@ -74,6 +81,46 @@ export async function renderDashboard() {
 
         container.innerHTML = html;
 
+        // Start live date-time display
+        const dateTimeEle = document.getElementById('live-datetime');
+        if (dateTimeEle) {
+            const updateTime = () => {
+                const now = new Date();
+                const day = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long' });
+                const date = now.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', month: 'long', day: 'numeric' });
+                const time = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+                dateTimeEle.innerHTML = `
+                    <span style="
+                        background: var(--bg-elevated);
+                        padding: 6px 12px;
+                        border-radius: var(--radius-full);
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: var(--text-secondary);
+                    ">${day}</span>
+                    <span style="
+                        background: var(--bg-elevated);
+                        padding: 6px 12px;
+                        border-radius: var(--radius-full);
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        color: var(--text-secondary);
+                    ">${date}</span>
+                    <span style="
+                        background: var(--accent-gradient);
+                        padding: 6px 12px;
+                        border-radius: var(--radius-full);
+                        font-size: 0.85rem;
+                        font-weight: 700;
+                        color: white;
+                    ">${time}</span>
+                `;
+            };
+            updateTime();
+            dateTimeInterval = setInterval(updateTime, 1000);
+        }
+
         // Attach Event Listener for Lottery
         const btn = document.getElementById('lottery-draw-btn');
         if (btn) {
@@ -94,7 +141,17 @@ export async function renderDashboard() {
         }
 
     } catch (error) {
-        container.innerHTML = `<div class="p-4" style="color: var(--danger)">Error: ${error.message}</div>`;
+        container.innerHTML = `
+            <div class="card" style="border-left: 4px solid var(--danger); animation: fadeIn 0.3s ease-out;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-warning-circle" style="font-size: 2rem; color: var(--danger);"></i>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0; font-weight: 600; color: var(--text-primary);">An Error Occurred</h3>
+                        <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${error.message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -123,5 +180,12 @@ function renderTasksOrLottery(tasks) {
                 </p>
             </div>
         `;
+    }
+}
+
+export function stopDashboardUpdates() {
+    if (dateTimeInterval) {
+        clearInterval(dateTimeInterval);
+        dateTimeInterval = null;
     }
 }

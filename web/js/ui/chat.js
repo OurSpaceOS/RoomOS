@@ -278,10 +278,19 @@ async function loadMessages(container, myId) {
 
                 const div = document.createElement('div');
                 div.className = `msg-bubble ${isMe ? 'me' : `them ${userColorClass}`}`;
+                
+                const date = new Date(msg.created_at + ' UTC');
+                date.setHours(date.getHours() - 1);
+
                 div.innerHTML = `
                     ${!isMe ? `<div class="sender">${msg.name}</div>` : ''}
                     <div class="text">${msg.message}</div>
-                    <div class="time">${new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="time">${date.toLocaleTimeString([], {
+                        timeZone: 'Asia/Kolkata',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    })}</div>
                 `;
                 container.appendChild(div);
             });
@@ -294,6 +303,17 @@ async function loadMessages(container, myId) {
         }
     } catch (e) {
         console.error(e);
+        container.innerHTML = `
+            <div class="card" style="margin:16px; border-left: 4px solid var(--danger); animation: fadeIn 0.3s ease-out;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-warning-circle" style="font-size: 2rem; color: var(--danger);"></i>
+                    <div style="flex: 1;">
+                        <h3 style="margin: 0; font-weight: 600; color: var(--text-primary);">An Error Occurred</h3>
+                        <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${e.message}</p>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 

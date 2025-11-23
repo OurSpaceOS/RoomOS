@@ -23,7 +23,7 @@ export async function renderExpenseAnalytics() {
         myTransactions.forEach(t => {
             const date = new Date(t.created_at);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
             
             if (!monthlyData[monthKey]) {
                 monthlyData[monthKey] = {
@@ -103,7 +103,7 @@ export async function renderExpenseAnalytics() {
                 
                 month.transactions.forEach(t => {
                     const date = new Date(t.created_at);
-                    const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                    const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
                     
                     html += `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-input); border-radius: var(--radius-md); margin-bottom: 10px;">
