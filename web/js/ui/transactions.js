@@ -263,6 +263,15 @@ export async function renderTransactions() {
                         <input type="number" id="amount" class="input-field" placeholder="Amount (₹)" style="margin-bottom: 16px;">
                     </div>
                     
+                    ${currentUser.role === 'admin' ? `
+                    <div class="input-group">
+                        <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; display: block; font-weight: 600;">Paid By:</label>
+                        <select id="paid-by" class="input-field" style="margin-bottom: 16px; padding: 12px; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer;">
+                            ${members.map(m => `<option value="${m.id}" ${m.id === currentUser.id ? 'selected' : ''}>${m.name}${m.id === currentUser.id ? ' (You)' : ''}</option>`).join('')}
+                        </select>
+                    </div>
+                    ` : ''}
+                    
                     <div class="input-group">
                         <label style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; display: block; font-weight: 600;">Split between:</label>
                         <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; font-style: italic; padding: 8px; background: var(--bg-input); border-radius: var(--radius-sm);">
@@ -345,6 +354,15 @@ export async function renderTransactions() {
                 amount,
                 split_between: selectedUsers
             };
+            
+            // Add paid_by if admin selected a different payer
+            const paidBySelect = document.getElementById('paid-by');
+            if (paidBySelect) {
+                const paidBy = parseInt(paidBySelect.value);
+                if (paidBy !== currentUser.id) {
+                    payload.paid_by = paidBy;
+                }
+            }
 
             // Offline Handling
             if (!navigator.onLine) {

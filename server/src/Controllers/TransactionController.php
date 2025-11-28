@@ -26,6 +26,85 @@ class TransactionController {
         return $stmt->fetch();
     }
 
+    private function isUserAdmin($userId) {
+        $stmt = $this->pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        return $user && $user['role'] === 'admin';
+    }
+
+    /**
+     * Calculate optimal settlements to minimize transactions
+     * Uses greedy algorithm to match creditors with debtors
+     * 
+     * @param array $allBalances Array of user balances with user_id, balance, and user_name
+     * @return array Array of settlements with from_user, to_user, and amount
+     */
+    private function calculateOptimalSettlements($allBalances) {
+        $creditors = [];  // People who are owed money (positive balance)
+        $debtors = [];    // People who owe money (negative balance)
+        
+        // Separate creditors and debtors
+        foreach ($allBalances as $balance) {
+            $amount = floatval($balance['balance']);
+            if ($amount > 0.01) {  // Small threshold to handle floating point errors
+                $creditors[] = [
+                    'user_id' => $balance['user_id'],
+                    'user_name' => $balance['user_name'],
+                    'balance' => $amount
+                ];
+            } else if ($amount < -0.01) {
+                $debtors[] = [
+                    'user_id' => $balance['user_id'],
+                    'user_name' => $balance['user_name'],
+                    'balance' => $amount  // Negative value
+                ];
+            }
+        }
+        
+        $settlements = [];
+        
+        // Greedy algorithm: match largest creditor with largest debtor
+        while (!empty($creditors) && !empty($debtors)) {
+            // Sort to get largest amounts (most efficient settling)
+            usort($creditors, function($a, $b) {
+                return $b['balance'] <=> $a['balance'];
+            });
+            usort($debtors, function($a, $b) {
+                return $a['balance'] <=> $b['balance'];  // Most negative first
+            });
+            
+            $creditor = array_shift($creditors);
+            $debtor = array_shift($debtors);
+            
+            // Settlement amount is the minimum of what's owed and what's due
+            $settlementAmount = min($creditor['balance'], abs($debtor['balance']));
+            
+            // Record the settlement
+            $settlements[] = [
+                'from_user_id' => $debtor['user_id'],
+                'from_user_name' => $debtor['user_name'],
+                'to_user_id' => $creditor['user_id'],
+                'to_user_name' => $creditor['user_name'],
+                'amount' => $settlementAmount
+            ];
+            
+            // Update balances
+            $creditor['balance'] -= $settlementAmount;
+            $debtor['balance'] += $settlementAmount;
+            
+            // Re-add to arrays if not fully settled
+            if ($creditor['balance'] > 0.01) {
+                $creditors[] = $creditor;
+            }
+            if ($debtor['balance'] < -0.01) {
+                $debtors[] = $debtor;
+            }
+        }
+        
+        return $settlements;
+    }
+
     public function add() {
         $userId = $this->getUserIdFromToken();
         if (!$userId) {
@@ -50,6 +129,29 @@ class TransactionController {
             return;
         }
 
+        // Handle paid_by parameter for admin users
+        $paidBy = $userId; // Default to current user
+        if (isset($data['paid_by']) && $data['paid_by'] != $userId) {
+            // Check if current user is admin
+            if (!$this->isUserAdmin($userId)) {
+                http_response_code(403);
+                echo json_encode(['error' => 'Only admins can add expenses on behalf of others']);
+                return;
+            }
+            
+            // Validate that paid_by user exists and is in the same group
+            $paidBy = intval($data['paid_by']);
+            $stmt = $this->pdo->prepare("SELECT group_id FROM users WHERE id = ?");
+            $stmt->execute([$paidBy]);
+            $paidByUser = $stmt->fetch();
+            
+            if (!$paidByUser || $paidByUser['group_id'] != $user['group_id']) {
+                http_response_code(400);
+                echo json_encode(['error' => 'Invalid paid_by user or not in same group']);
+                return;
+            }
+        }
+
         try {
             $this->pdo->beginTransaction();
 
@@ -58,9 +160,9 @@ class TransactionController {
                 ? json_encode($data['split_between']) 
                 : null;
 
-            // 1. Record Transaction with split_between info
+            // 1. Record Transaction with split_between info (use paidBy instead of userId)
             $stmt = $this->pdo->prepare("INSERT INTO transactions (group_id, user_id, amount, description, split_between) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$user['group_id'], $userId, $amount, $data['description'], $splitBetweenData]);
+            $stmt->execute([$user['group_id'], $paidBy, $amount, $data['description'], $splitBetweenData]);
 
             // 2. Update Balances with selective split
             // Get members to split between (default to all if not specified)
@@ -78,34 +180,43 @@ class TransactionController {
             $memberCount = count($splitBetween);
 
             if ($memberCount > 0) {
-                // Check if only one person is selected and it's not the payer
-                // In this case, that person owes the full amount
-                $isDirectPayment = ($memberCount === 1 && !in_array($userId, $splitBetween));
+                // Check if payer is included in the split
+                $payerIncluded = in_array($paidBy, $splitBetween);
                 
-                if ($isDirectPayment) {
-                    // Direct payment: selected person owes the full amount
-                    $selectedUserId = $splitBetween[0];
+                if (!$payerIncluded) {
+                    // Payer paid for others (not splitting with themselves)
+                    // Payer gets +full amount, others split the debt
                     
-                    // Ensure balance rows exist for both users
-                    foreach ([$userId, $selectedUserId] as $uid) {
-                        $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
-                        $stmt->execute([$user['group_id'], $uid]);
-                        if (!$stmt->fetch()) {
-                            $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
-                            $stmt->execute([$user['group_id'], $uid]);
-                        }
+                    // Ensure payer's balance row exists
+                    $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                    $stmt->execute([$user['group_id'], $paidBy]);
+                    if (!$stmt->fetch()) {
+                        $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                        $stmt->execute([$user['group_id'], $paidBy]);
                     }
                     
-                    // Payer gets +amount (they are owed)
+                    // Payer gets the full amount (they are owed)
                     $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
-                    $stmt->execute([$amount, $user['group_id'], $userId]);
+                    $stmt->execute([$amount, $user['group_id'], $paidBy]);
                     
-                    // Selected person gets -amount (they owe)
-                    $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
-                    $stmt->execute([$amount, $user['group_id'], $selectedUserId]);
+                    // Each selected person owes their share
+                    $share = $amount / $memberCount;
+                    foreach ($splitBetween as $debtorId) {
+                        // Ensure balance row exists
+                        $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$user['group_id'], $debtorId]);
+                        if (!$stmt->fetch()) {
+                            $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                            $stmt->execute([$user['group_id'], $debtorId]);
+                        }
+                        
+                        // Debtor owes their share
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$share, $user['group_id'], $debtorId]);
+                    }
                     
                 } else {
-                    // Split payment: divide amount among selected members
+                    // Payer is included in split (normal split scenario)
                     $share = $amount / $memberCount;
 
                     foreach ($splitBetween as $mid) {
@@ -117,7 +228,7 @@ class TransactionController {
                             $stmt->execute([$user['group_id'], $mid]);
                         }
 
-                        if ($mid == $userId) {
+                        if ($mid == $paidBy) {
                             // Payer: + (Amount - Share)
                             $change = $amount - $share;
                         } else {
@@ -168,51 +279,42 @@ class TransactionController {
         $stmt->execute([$userId]);
         $myBal = $stmt->fetchColumn();
 
-        // Get individual balances (who owes whom)
-        // We need to calculate pairwise balances
+        // Get ALL balances in the group (including mine) for settlement calculation
         $stmt = $this->pdo->prepare("
             SELECT b.user_id, b.balance, u.name as user_name
             FROM balances b 
             JOIN users u ON b.user_id = u.id 
-            WHERE b.group_id = ? AND b.user_id != ?
+            WHERE b.group_id = ?
         ");
-        $stmt->execute([$user['group_id'], $userId]);
-        $otherBalances = $stmt->fetchAll();
-
-        // Transform to show relative balances
-        $balances = [];
-        foreach ($otherBalances as $other) {
-            // If my balance is +100 and their balance is -50
-            // Then they owe me 50 (from my perspective)
-            // Actually, we need to think differently:
-            // Each person has a balance. Positive = they are owed, Negative = they owe
-            // To show "X owes you" or "you owe X", we compare balances
-            
-            // Simpler approach: Show their balance from my perspective
-            // If their balance is negative, they owe the group (including me)
-            // If their balance is positive, the group owes them (including me)
-            
-            // Actually for pairwise: we need to calculate based on total balances
-            // For now, let's show a simplified view:
-            // My balance vs their balance gives us the relationship
-            
-            $myBalance = floatval($myBal ?: 0);
-            $theirBalance = floatval($other['balance']);
-            
-            // Calculate pairwise balance
-            // This is simplified - in reality we'd need more complex calculation
-            // For now: if I'm +100 and they're -100, they owe me proportionally
-            
-            $balances[] = [
-                'other_user_id' => $other['user_id'],
-                'other_user_name' => $other['user_name'],
-                'balance' => -$theirBalance // Negative of their balance shows what they owe/are owed
-            ];
+        $stmt->execute([$user['group_id']]);
+        $allBalances = $stmt->fetchAll();
+        
+        // Calculate optimal settlements for the entire group
+        $allSettlements = $this->calculateOptimalSettlements($allBalances);
+        
+        // Filter settlements relevant to current user
+        $mySettlements = [];
+        foreach ($allSettlements as $settlement) {
+            if ($settlement['from_user_id'] == $userId) {
+                // I owe someone
+                $mySettlements[] = [
+                    'other_user_id' => $settlement['to_user_id'],
+                    'other_user_name' => $settlement['to_user_name'],
+                    'balance' => -$settlement['amount']  // Negative because I owe
+                ];
+            } else if ($settlement['to_user_id'] == $userId) {
+                // Someone owes me
+                $mySettlements[] = [
+                    'other_user_id' => $settlement['from_user_id'],
+                    'other_user_name' => $settlement['from_user_name'],
+                    'balance' => $settlement['amount']  // Positive because they owe me
+                ];
+            }
         }
 
         echo json_encode([
             'transactions' => $transactions,
-            'balances' => $balances,
+            'balances' => $mySettlements,
             'my_balance' => $myBal ?: 0
         ]);
     }
@@ -261,33 +363,55 @@ class TransactionController {
             $amount = floatval($transaction['amount']);
             $groupId = $transaction['group_id'];
 
-            // Get all members in the group to reverse the balance changes
-            // We need to reverse the exact same logic that was used when creating the transaction
-            // For simplicity, we'll get all members and reverse proportionally
-            $stmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ?");
-            $stmt->execute([$groupId]);
-            $allMembers = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            // Get split_between data to properly reverse the balance changes
+            $splitBetween = $transaction['split_between'] 
+                ? json_decode($transaction['split_between'], true) 
+                : null;
             
-            $memberCount = count($allMembers);
+            // If split_between is not available (old transactions), fall back to all members
+            if ($splitBetween === null) {
+                $stmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ?");
+                $stmt->execute([$groupId]);
+                $splitBetween = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            }
+            
+            $memberCount = count($splitBetween);
             
             if ($memberCount > 0) {
-                // Check if it was a direct payment (only one person, not the payer)
-                // We'll assume it was split equally among all members for reversal
-                // This is a simplified approach - ideally we'd store split_between in the transaction
+                // Check if payer was included in the split
+                $payerIncluded = in_array($userId, $splitBetween);
                 
-                $share = $amount / $memberCount;
-                
-                foreach ($allMembers as $mid) {
-                    if ($mid == $userId) {
-                        // Reverse payer's credit: - (Amount - Share)
-                        $change = -($amount - $share);
-                    } else {
-                        // Reverse others' debt: + Share
-                        $change = $share;
+                if (!$payerIncluded) {
+                    // This was a payment for others (payer not splitting with themselves)
+                    // Reverse: payer loses the credit, debtors gain back (debt removed)
+                    
+                    // Reverse payer's credit: -amount
+                    $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
+                    $stmt->execute([$amount, $groupId, $userId]);
+                    
+                    // Each debtor's debt is removed: +share
+                    $share = $amount / $memberCount;
+                    foreach ($splitBetween as $debtorId) {
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$share, $groupId, $debtorId]);
                     }
                     
-                    $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
-                    $stmt->execute([$change, $groupId, $mid]);
+                } else {
+                    // Payer was included in split (normal split reversal)
+                    $share = $amount / $memberCount;
+                    
+                    foreach ($splitBetween as $mid) {
+                        if ($mid == $userId) {
+                            // Reverse payer's credit: - (Amount - Share)
+                            $change = -($amount - $share);
+                        } else {
+                            // Reverse others' debt: + Share
+                            $change = $share;
+                        }
+                        
+                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$change, $groupId, $mid]);
+                    }
                 }
             }
 
@@ -352,33 +476,42 @@ class TransactionController {
                 $memberCount = count($splitBetween);
                 
                 if ($memberCount > 0) {
-                    // Check if only one person is selected and it's not the payer
-                    $isDirectPayment = ($memberCount === 1 && !in_array($payerId, $splitBetween));
+                    // Check if payer was included in split
+                    $payerIncluded = in_array($payerId, $splitBetween);
                     
-                    if ($isDirectPayment) {
-                        // Direct payment: selected person owes the full amount
-                        $selectedUserId = $splitBetween[0];
+                    if (!$payerIncluded) {
+                        // Payer paid for others (not splitting with themselves)
                         
-                        // Ensure balance rows exist
-                        foreach ([$payerId, $selectedUserId] as $uid) {
-                            $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
-                            $stmt->execute([$user['group_id'], $uid]);
-                            if (!$stmt->fetch()) {
-                                $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
-                                $stmt->execute([$user['group_id'], $uid]);
-                            }
+                        // Ensure payer's balance row exists
+                        $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                        $stmt->execute([$user['group_id'], $payerId]);
+                        if (!$stmt->fetch()) {
+                            $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                            $stmt->execute([$user['group_id'], $payerId]);
                         }
                         
                         // Payer gets +amount
                         $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance + ? WHERE group_id = ? AND user_id = ?");
                         $stmt->execute([$amount, $user['group_id'], $payerId]);
                         
-                        // Selected person gets -amount
-                        $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
-                        $stmt->execute([$amount, $user['group_id'], $selectedUserId]);
+                        // Each selected person owes their share
+                        $share = $amount / $memberCount;
+                        foreach ($splitBetween as $debtorId) {
+                            // Ensure balance row exists
+                            $stmt = $this->pdo->prepare("SELECT id FROM balances WHERE group_id = ? AND user_id = ?");
+                            $stmt->execute([$user['group_id'], $debtorId]);
+                            if (!$stmt->fetch()) {
+                                $stmt = $this->pdo->prepare("INSERT INTO balances (group_id, user_id, balance) VALUES (?, ?, 0)");
+                                $stmt->execute([$user['group_id'], $debtorId]);
+                            }
+                            
+                            // Debtor owes share
+                            $stmt = $this->pdo->prepare("UPDATE balances SET balance = balance - ? WHERE group_id = ? AND user_id = ?");
+                            $stmt->execute([$share, $user['group_id'], $debtorId]);
+                        }
                         
                     } else {
-                        // Split payment
+                        // Payer included in split (normal split)
                         $share = $amount / $memberCount;
                         
                         foreach ($splitBetween as $mid) {
