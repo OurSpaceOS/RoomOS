@@ -1,6 +1,6 @@
 # RoomOS API Reference
 
-Base URL: `https://sumit11.serv00.net/roomOS/server/public`
+Base URL: `https://prospine.in/roomOS/server/public`
 
 ## Authentication
 

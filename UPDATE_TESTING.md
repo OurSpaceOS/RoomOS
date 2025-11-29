@@ -42,7 +42,7 @@ The update popup should appear with:
    - Look for red error messages
 
 3. **Verify API endpoint**
-   - Open: `https://sumit11.serv00.net/roomOS/server/public/updates/check`
+   - Open: `https://prospine.in/roomOS/server/public/updates/check`
    - Should return JSON with `has_update: true`
 
 4. **Check if you dismissed it**

@@ -13,19 +13,26 @@ export async function renderDashboard() {
 
     try {
         const token = localStorage.getItem('token');
-        // Parallel fetch: Roster (Today) + Tasks (Today)
+        // Parallel fetch: Roster (Week) + Tasks (Today)
+        // We fetch the whole week to determine "Today" based on CLIENT timezone (India), not server timezone (Poland)
         const [rosterRes, tasksRes] = await Promise.all([
-            apiCall('/roster/today', 'GET', null, token),
+            apiCall('/roster/week', 'GET', null, token),
             apiCall('/tasks/today', 'GET', null, token)
         ]);
 
-        const day = rosterRes.day;
+        // Determine correct day index for India (IST)
+        const dayMap = { 'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6 };
+        const todayName = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'long' });
+        const dayIndex = dayMap[todayName];
+
+        const roster = rosterRes.roster || [];
+        const day = roster.find(d => d.day_index === dayIndex) || {};
         const tasks = tasksRes.tasks;
 
         // Parse Roster Data
         let morning = [], night = [], passengerM = '', passengerN = '';
 
-        if (day) {
+        if (day && day.morning) {
             morning = JSON.parse(day.morning || '[]');
             night = JSON.parse(day.night || '[]');
             passengerM = day.passenger_m || '';

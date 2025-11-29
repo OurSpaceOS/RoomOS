@@ -1,7 +1,7 @@
 import { cacheData, getCachedData, queueAction } from './store.js';
 import { showToast } from './ui/toast.js';
 
-export const API_BASE = 'https://sumit11.serv00.net/roomOS/server/public';
+export const API_BASE = 'https://prospine.in/roomOS/server/public';
 
 export async function apiCall(endpoint, method = 'GET', body = null, token = null) {
     const headers = {

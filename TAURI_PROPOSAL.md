@@ -5,7 +5,7 @@ Web app located in /home/purrs/roomOS/web/ with HTML/CSS/JS
 Service worker (sw.js) caches all static assets and uses stale-while-revalidate strategy
 API calls via api.js cache GET responses in IndexedDB indefinitely
 No cache invalidation or real-time update mechanism
-API base: https://sumit11.serv00.net/roomOS/server/public
+API base: https://prospine.in/roomOS/server/public
 Proposed Solution
 1. Initialize Tauri Project
 Create new Tauri project in /home/purrs/roomOS/tauri-app/
