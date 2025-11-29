@@ -40,69 +40,140 @@ class TransactionController {
      * @param array $allBalances Array of user balances with user_id, balance, and user_name
      * @return array Array of settlements with from_user, to_user, and amount
      */
-    private function calculateOptimalSettlements($allBalances) {
-        $creditors = [];  // People who are owed money (positive balance)
-        $debtors = [];    // People who owe money (negative balance)
+    /**
+     * Calculate bidirectional pairwise balances from transaction history
+     * Shows NET relationships: netted debts between each pair of users
+     * 
+     * @param int $groupId The group ID
+     * @return array Array of net pairwise debts
+     */
+    private function calculateBidirectionalPairwise($groupId) {
+        // Get ALL transactions for the group
+        $stmt = $this->pdo->prepare("SELECT * FROM transactions WHERE group_id = ? ORDER BY created_at ASC");
+        $stmt->execute([$groupId]);
+        $transactions = $stmt->fetchAll();
         
-        // Separate creditors and debtors
-        foreach ($allBalances as $balance) {
-            $amount = floatval($balance['balance']);
-            if ($amount > 0.01) {  // Small threshold to handle floating point errors
-                $creditors[] = [
-                    'user_id' => $balance['user_id'],
-                    'user_name' => $balance['user_name'],
-                    'balance' => $amount
-                ];
-            } else if ($amount < -0.01) {
-                $debtors[] = [
-                    'user_id' => $balance['user_id'],
-                    'user_name' => $balance['user_name'],
-                    'balance' => $amount  // Negative value
-                ];
+        // Track pairwise debts: pairwiseDebts[from_user][to_user] = amount
+        $pairwiseDebts = [];
+        
+        // Process each transaction
+        foreach ($transactions as $transaction) {
+            $amount = floatval($transaction['amount']);
+            $payerId = $transaction['user_id'];
+            
+            // Get split_between data
+            $splitBetween = $transaction['split_between'] 
+                ? json_decode($transaction['split_between'], true) 
+                : null;
+            
+            if ($splitBetween === null) {
+                continue; // Skip if no split data
+            }
+            
+            $memberCount = count($splitBetween);
+            if ($memberCount == 0) continue;
+            
+            // Check if payer is included in split
+            $payerIncluded = in_array($payerId, $splitBetween);
+            
+            if (!$payerIncluded) {
+                // Payer paid for others (not themselves)
+                // Each person in splitBetween owes payer their share
+                $share = $amount / $memberCount;
+                
+                foreach ($splitBetween as $debtorId) {
+                    if (!isset($pairwiseDebts[$debtorId])) {
+                        $pairwiseDebts[$debtorId] = [];
+                    }
+                    if (!isset($pairwiseDebts[$debtorId][$payerId])) {
+                        $pairwiseDebts[$debtorId][$payerId] = 0;
+                    }
+                    $pairwiseDebts[$debtorId][$payerId] += $share;
+                }
+                
+            } else {
+                // Payer is included in split (normal scenario)
+                $share = $amount / $memberCount;
+                
+                foreach ($splitBetween as $memberId) {
+                    if ($memberId != $payerId) {
+                        // This member owes the payer their share
+                        if (!isset($pairwiseDebts[$memberId])) {
+                            $pairwiseDebts[$memberId] = [];
+                        }
+                        if (!isset($pairwiseDebts[$memberId][$payerId])) {
+                            $pairwiseDebts[$memberId][$payerId] = 0;
+                        }
+                        $pairwiseDebts[$memberId][$payerId] += $share;
+                    }
+                }
             }
         }
         
-        $settlements = [];
+        // NET OUT bidirectional debts
+        // If A owes B ₹500 and B owes A ₹200, result is A owes B ₹300
+        $nettedDebts = [];
+        $processed = [];
         
-        // Greedy algorithm: match largest creditor with largest debtor
-        while (!empty($creditors) && !empty($debtors)) {
-            // Sort to get largest amounts (most efficient settling)
-            usort($creditors, function($a, $b) {
-                return $b['balance'] <=> $a['balance'];
-            });
-            usort($debtors, function($a, $b) {
-                return $a['balance'] <=> $b['balance'];  // Most negative first
-            });
+        foreach ($pairwiseDebts as $fromUser => $toUsers) {
+            foreach ($toUsers as $toUser => $amountOwed) {
+                // Create a unique key for this pair
+                $pairKey = min($fromUser, $toUser) . '_' . max($fromUser, $toUser);
+                
+                if (isset($processed[$pairKey])) {
+                    continue; // Already processed this pair
+                }
+                
+                // Get reverse debt (if exists)
+                $reverseOwed = isset($pairwiseDebts[$toUser][$fromUser]) 
+                    ? $pairwiseDebts[$toUser][$fromUser] 
+                    : 0;
+                
+                // Calculate net
+                $netAmount = $amountOwed - $reverseOwed;
+                
+                if (abs($netAmount) > 0.01) {  // Only include meaningful amounts
+                    if ($netAmount > 0) {
+                        // fromUser owes toUser (net)
+                        $nettedDebts[] = [
+                            'from_user_id' => $fromUser,
+                            'to_user_id' => $toUser,
+                            'amount' => $netAmount
+                        ];
+                    } else {
+                        // toUser owes fromUser (net)
+                        $nettedDebts[] = [
+                            'from_user_id' => $toUser,
+                            'to_user_id' => $fromUser,
+                            'amount' => abs($netAmount)
+                        ];
+                    }
+                }
+                
+                $processed[$pairKey] = true;
+            }
+        }
+        
+        // Add user names
+        $result = [];
+        foreach ($nettedDebts as $debt) {
+            $stmt = $this->pdo->prepare("SELECT name FROM users WHERE id = ?");
+            $stmt->execute([$debt['from_user_id']]);
+            $fromName = $stmt->fetchColumn();
             
-            $creditor = array_shift($creditors);
-            $debtor = array_shift($debtors);
+            $stmt->execute([$debt['to_user_id']]);
+            $toName = $stmt->fetchColumn();
             
-            // Settlement amount is the minimum of what's owed and what's due
-            $settlementAmount = min($creditor['balance'], abs($debtor['balance']));
-            
-            // Record the settlement
-            $settlements[] = [
-                'from_user_id' => $debtor['user_id'],
-                'from_user_name' => $debtor['user_name'],
-                'to_user_id' => $creditor['user_id'],
-                'to_user_name' => $creditor['user_name'],
-                'amount' => $settlementAmount
+            $result[] = [
+                'from_user_id' => $debt['from_user_id'],
+                'from_user_name' => $fromName,
+                'to_user_id' => $debt['to_user_id'],
+                'to_user_name' => $toName,
+                'amount' => $debt['amount']
             ];
-            
-            // Update balances
-            $creditor['balance'] -= $settlementAmount;
-            $debtor['balance'] += $settlementAmount;
-            
-            // Re-add to arrays if not fully settled
-            if ($creditor['balance'] > 0.01) {
-                $creditors[] = $creditor;
-            }
-            if ($debtor['balance'] < -0.01) {
-                $debtors[] = $debtor;
-            }
         }
         
-        return $settlements;
+        return $result;
     }
 
     public function add() {
@@ -279,18 +350,8 @@ class TransactionController {
         $stmt->execute([$userId]);
         $myBal = $stmt->fetchColumn();
 
-        // Get ALL balances in the group (including mine) for settlement calculation
-        $stmt = $this->pdo->prepare("
-            SELECT b.user_id, b.balance, u.name as user_name
-            FROM balances b 
-            JOIN users u ON b.user_id = u.id 
-            WHERE b.group_id = ?
-        ");
-        $stmt->execute([$user['group_id']]);
-        $allBalances = $stmt->fetchAll();
-        
-        // Calculate optimal settlements for the entire group
-        $allSettlements = $this->calculateOptimalSettlements($allBalances);
+        // Calculate bidirectional pairwise balances from transaction history
+        $allSettlements = $this->calculateBidirectionalPairwise($user['group_id']);
         
         // Filter settlements relevant to current user
         $mySettlements = [];

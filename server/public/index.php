@@ -95,6 +95,8 @@ $routes = [
     '/auth/register' => ['AuthController', 'register'],
     '/auth/login' => ['AuthController', 'login'],
     '/auth/reset-password' => ['AuthController', 'resetPassword'],
+    '/auth/upload-profile-picture' => ['AuthController', 'uploadProfilePicture'],
+    '/auth/remove-profile-picture' => ['AuthController', 'removeProfilePicture'],
     
     // Group
     '/group/create' => ['GroupController', 'create'],

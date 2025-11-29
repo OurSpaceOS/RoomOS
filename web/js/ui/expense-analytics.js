@@ -16,21 +16,49 @@ export async function renderExpenseAnalytics() {
         const members = membersRes.members;
         const currentUser = getState().user;
         
-        // Filter transactions where current user is in the split_between array
+        // Filter transactions where current user is in the split_between array (privacy)
         const myTransactions = transactions.filter(t => {
             const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
             return splitBetween.includes(currentUser.id);
         });
         
-        // Calculate total expenses (user's share only)
-        let totalExpenses = 0;
+        // Separate into SHARED vs PERSONAL expenses
+        const sharedExpenses = [];
+        const personalExpenses = [];
+        
         myTransactions.forEach(t => {
             const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
             const myShare = splitBetween.length > 0 ? parseFloat(t.amount) / splitBetween.length : 0;
-            totalExpenses += myShare;
+            
+            // Personal expense: user paid AND only selected themselves
+            const isPersonal = (t.user_id === currentUser.id) && (splitBetween.length === 1) && (splitBetween[0] === currentUser.id);
+            
+            const transactionWithShare = {...t, myShare, isPersonal};
+            
+            if (isPersonal) {
+                personalExpenses.push(transactionWithShare);
+            } else {
+                sharedExpenses.push(transactionWithShare);
+            }
         });
         
-        // Group transactions by month
+        // Calculate totals
+        const totalShared = sharedExpenses.reduce((sum, t) => sum + t.myShare, 0);
+        const totalPersonal = personalExpenses.reduce((sum, t) => sum + t.myShare, 0);
+        const totalExpenses = totalShared + totalPersonal;
+        
+        // Generate consistent colors for each user
+        const userColors = {};
+        const colorPalette = [
+            '#667eea', '#764ba2', '#f093fb', '#f5576c', 
+            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+            '#fa709a', '#fee140', '#30cfd0', '#330867'
+        ];
+        members.forEach((member, index) => {
+            userColors[member.id] = colorPalette[index % colorPalette.length];
+        });
+        
+        // Group ALL transactions by month
         const monthlyData = {};
         myTransactions.forEach(t => {
             const date = new Date(t.created_at);
@@ -41,14 +69,22 @@ export async function renderExpenseAnalytics() {
                 monthlyData[monthKey] = {
                     name: monthName,
                     total: 0,
-                    transactions: []
+                    shared: [],
+                    personal: []
                 };
             }
             
             const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
             const myShare = splitBetween.length > 0 ? parseFloat(t.amount) / splitBetween.length : 0;
+            const isPersonal = (t.user_id === currentUser.id) && (splitBetween.length === 1) && (splitBetween[0] === currentUser.id);
+            
             monthlyData[monthKey].total += myShare;
-            monthlyData[monthKey].transactions.push({...t, myShare});
+            
+            if (isPersonal) {
+                monthlyData[monthKey].personal.push({...t, myShare});
+            } else {
+                monthlyData[monthKey].shared.push({...t, myShare});
+            }
         });
         
         // Sort months in descending order (newest first)
@@ -61,91 +97,146 @@ export async function renderExpenseAnalytics() {
                     <button onclick="app.navigate('transactions')" class="icon-btn" style="background: var(--bg-input); width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                         <i class="ph ph-arrow-left"></i>
                     </button>
-
+                    <h2 style="margin: 0; color: var(--text-primary);">Expense Analytics</h2>
                 </div>
 
-                <!-- Total Expenses Summary -->
-                <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-bottom: 32px; padding: 24px;">
-                    <div style="color: rgba(255,255,255,0.9); font-size: 0.95rem; margin-bottom: 8px;">Your Share of Expenses (All Time)</div>
-                    <div style="font-size: 2.8rem; font-weight: 700; color: white; margin-bottom: 8px;">
+                <!-- Expense Type Summary Cards -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
+                    <!-- Shared Expenses Card -->
+                    <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px;">
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-bottom: 6px;">Shared Expenses</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: white; margin-bottom: 6px;">
+                            ₹${totalShared.toFixed(2)}
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">
+                            ${sharedExpenses.length} expense${sharedExpenses.length !== 1 ? 's' : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Expenses Card -->
+                    <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px;">
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-bottom: 6px;">Personal Expenses</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: white; margin-bottom: 6px;">
+                            ₹${totalPersonal.toFixed(2)}
+                        </div>
+                        <div style="color: rgba(255,255,255,0.8); font-size: 0.85rem;">
+                            ${personalExpenses.length} expense${personalExpenses.length !== 1 ? 's' : ''} • Private
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Total -->
+                <div class="card" style="background: var(--bg-tertiary); margin-bottom: 32px; padding: 16px; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 4px;">Total Expenses (All Time)</div>
+                    <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">
                         ₹${totalExpenses.toFixed(2)}
                     </div>
-                    <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
-                        ${myTransactions.length} expense${myTransactions.length !== 1 ? 's' : ''} you're part of
-                    </div>
                 </div>
-
+                
                 <!-- Monthly Breakdown -->
-                <h3 style="color: var(--text-primary); margin-bottom: 20px; font-size: 1.3rem;">Monthly Breakdown</h3>
-        `;
-
-        if (sortedMonths.length === 0) {
-            html += '<p style="color: var(--text-secondary); padding: 20px 0;">No expenses recorded yet.</p>';
-        } else {
-            sortedMonths.forEach(monthKey => {
-                const month = monthlyData[monthKey];
-                const percentage = ((month.total / totalExpenses) * 100).toFixed(1);
+                <h3 style="color: var(--text-primary); margin-bottom: 20px; margin-top: 32px; font-size: 1.3rem;">Monthly Breakdown</h3>
                 
-                html += `
-                    <div class="card" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 20px; padding: 20px;" 
-                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" 
-                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
-                         onclick="document.getElementById('month-${monthKey}').style.display = document.getElementById('month-${monthKey}').style.display === 'none' ? 'block' : 'none'">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <div>
-                                <div style="font-weight: 600; font-size: 1.15rem; color: var(--text-primary); margin-bottom: 4px;">${month.name}</div>
-                                <div style="font-size: 0.9rem; color: var(--text-secondary);">${month.transactions.length} transaction${month.transactions.length !== 1 ? 's' : ''}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-weight: 700; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 2px;">₹${month.total.toFixed(2)}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">${percentage}% of total</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Bar -->
-                        <div style="width: 100%; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-top: 12px;">
-                            <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px;"></div>
-                        </div>
-                        
-                        <!-- Expandable Transaction List -->
-                        <div id="month-${monthKey}" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--bg-tertiary);">
-                            <h4 style="font-size: 0.95rem; color: var(--text-secondary); margin: 0 0 16px 0; font-weight: 600;">Transactions:</h4>
-                `;
+                ${sortedMonths.length === 0 ? '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses recorded yet.</p>' : ''}
                 
-                // Sort transactions by date (newest first)
-                month.transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                
-                month.transactions.forEach(t => {
-                    const date = new Date(t.created_at);
-                    const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+                ${sortedMonths.map(monthKey => {
+                    const month = monthlyData[monthKey];
+                    const percentage = totalExpenses > 0 ? ((month.total / totalExpenses) * 100).toFixed(1) : 0;
+                    const totalCount = month.shared.length + month.personal.length;
                     
-                    // Find who paid
-                    const payer = members.find(m => m.id === t.user_id);
-                    const payerName = payer ? payer.name : 'Unknown';
-                    const isPaidByMe = t.user_id === currentUser.id;
-                    
-                    html += `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-input); border-radius: var(--radius-md); margin-bottom: 10px;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px; font-size: 1rem;">${t.description}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate} • Paid by ${isPaidByMe ? 'You' : payerName}</div>
+                    return `
+                        <div class="card" style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-bottom: 20px; padding: 20px;" 
+                             onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" 
+                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+                             onclick="const el = document.getElementById('month-${monthKey}'); el.style.display = el.style.display === 'none' ? 'block' : 'none'">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <div>
+                                    <div style="font-weight: 600; font-size: 1.15rem; color: var(--text-primary); margin-bottom: 4px;">${month.name}</div>
+                                    <div style="font-size: 0.9rem; color: var(--text-secondary);">${totalCount} expense${totalCount !== 1 ? 's' : ''} (${month.shared.length} shared, ${month.personal.length} personal)</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-weight: 700; font-size: 1.3rem; color: var(--text-primary); margin-bottom: 2px;">₹${month.total.toFixed(2)}</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${percentage}% of total</div>
+                                </div>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${t.myShare.toFixed(2)}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary);">your share</div>
+                            
+                            <!-- Progress Bar -->
+                            <div style="width: 100%; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-top: 12px;">
+                                <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 4px;"></div>
+                            </div>
+                            
+                            <!-- Expandable Content -->
+                            <div id="month-${monthKey}" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--bg-tertiary);">
+                                ${month.shared.length > 0 ? `
+                                    <h4 style="font-size: 0.95rem; color: var(--text-secondary); margin: 0 0 12px 0; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem;">Shared</span>
+                                        ${month.shared.length} expense${month.shared.length !== 1 ? 's' : ''}
+                                    </h4>
+                                    ${month.shared.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(t => {
+                                        const date = new Date(t.created_at);
+                                        const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+                                        const payer = members.find(m => m.id === t.user_id);
+                                        const payerName = payer ? payer.name : 'Unknown';
+                                        const payerColor = userColors[t.user_id] || '#667eea';
+                                        const payerInitials = payerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                        const isPaidByMe = t.user_id === currentUser.id;
+                                        
+                                        return `
+                                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-input); border-radius: var(--radius-md); margin-bottom: 10px; border-left: 3px solid ${payerColor};">
+                                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: ${payerColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                                                        ${payerInitials}
+                                                    </div>
+                                                    <div style="flex: 1;">
+                                                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px; font-size: 1rem;">${t.description}</div>
+                                                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate} • Paid by ${isPaidByMe ? 'You' : payerName}</div>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${t.myShare.toFixed(2)}</div>
+                                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">your share</div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                ` : ''}
+                                
+                                ${month.personal.length > 0 ? `
+                                    <h4 style="font-size: 0.95rem; color: var(--text-secondary); margin: ${month.shared.length > 0 ? '20px' : '0'} 0 12px 0; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                                        <span style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem;">Personal</span>
+                                        ${month.personal.length} expense${month.personal.length !== 1 ? 's' : ''} • Private
+                                    </h4>
+                                    ${month.personal.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(t => {
+                                        const date = new Date(t.created_at);
+                                        const formattedDate = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+                                        const payerColor = userColors[currentUser.id] || '#f093fb';
+                                        const payerInitials = currentUser.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                        
+                                        return `
+                                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--bg-input); border-radius: var(--radius-md); margin-bottom: 10px; border-left: 3px solid ${payerColor};">
+                                                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                                                    <div style="width: 38px; height: 38px; border-radius: 50%; background: ${payerColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                                                        ${payerInitials}
+                                                    </div>
+                                                    <div style="flex: 1;">
+                                                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px; font-size: 1rem;">${t.description}</div>
+                                                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${formattedDate} • Personal expense</div>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${t.myShare.toFixed(2)}</div>
+                                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">only you</div>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                ` : ''}
                             </div>
                         </div>
                     `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            });
-        }
+                }).join('')}
+            </div>
+        `;
 
-        html += '</div>';
         container.innerHTML = html;
 
     } catch (error) {

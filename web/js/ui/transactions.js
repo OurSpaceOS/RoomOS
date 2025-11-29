@@ -158,21 +158,41 @@ export async function renderTransactions() {
                 <div class="transactions-list">
         `;
 
-        // Show all group transactions
-        if (transactions.length === 0) {
-            html += '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses added yet.</p>';
+        // Filter transactions where current user has a share (privacy)
+        const myRelevantTransactions = transactions.filter(t => {
+            const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
+            return splitBetween.includes(currentUser.id);
+        });
+        
+        // Generate consistent colors for each user
+        const userColors = {};
+        const colorPalette = [
+            '#667eea', '#764ba2', '#f093fb', '#f5576c', 
+            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+            '#fa709a', '#fee140', '#30cfd0', '#330867'
+        ];
+        members.forEach((member, index) => {
+            userColors[member.id] = colorPalette[index % colorPalette.length];
+        });
+        
+        if (myRelevantTransactions.length === 0) {
+            html += '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses to show.</p>';
         } else {
-            transactions.forEach(t => {
+            myRelevantTransactions.forEach(t => {
                 const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
                 const splitBetweenNames = splitBetween.map(id => {
                     const member = members.find(m => m.id === id);
                     return member ? member.name : 'Unknown';
                 }).join(', ');
                 
-                // Find the payer's name
+                // Find the payer's name and color
                 const payer = members.find(m => m.id === t.user_id);
                 const payerName = payer ? payer.name : 'Unknown';
+                const payerColor = userColors[t.user_id] || '#667eea';
                 const isPaidByCurrentUser = t.user_id === currentUser.id;
+                
+                // Get payer initials for avatar
+                const payerInitials = payerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                 
                 html += `
                     <div class="card transaction-item" 
@@ -183,12 +203,18 @@ export async function renderTransactions() {
                          data-split-between='${JSON.stringify(splitBetween)}'
                          data-split-names="${splitBetweenNames}"
                          data-date="${t.created_at}"
-                         style="padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                         style="padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-left: 4px solid ${payerColor};"
                          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'"
                          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-primary);">${t.description}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by ${isPaidByCurrentUser ? 'You' : payerName}</div>
+                        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+                            <!-- User Avatar Circle -->
+                            <div style="width: 44px; height: 44px; border-radius: 50%; background: ${payerColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.95rem; flex-shrink: 0;">
+                                ${payerInitials}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-primary);">${t.description}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by ${isPaidByCurrentUser ? 'You' : payerName}</div>
+                            </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 14px;">
                             <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${parseFloat(t.amount).toFixed(2)}</div>
