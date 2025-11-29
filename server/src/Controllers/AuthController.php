@@ -84,7 +84,7 @@ class AuthController {
         $email = $data['email'];
         $password = $data['password'];
 
-        $stmt = $this->pdo->prepare("SELECT id, name, password_hash, role, group_id, profile_picture FROM users WHERE email = ?");
+        $stmt = $this->pdo->prepare("SELECT id, name, password_hash, role, group_id FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
@@ -109,8 +109,7 @@ class AuthController {
                 'name' => $user['name'],
                 'email' => $email,
                 'role' => $user['role'],
-                'group_id' => $user['group_id'],
-                'profile_picture' => $user['profile_picture']
+                'group_id' => $user['group_id']
             ]
         ]);
     }
@@ -159,84 +158,5 @@ class AuthController {
         $stmt->execute([$newPasswordHash, $userId]);
 
         echo json_encode(['message' => 'Password updated successfully.']);
-    }
-
-    public function uploadProfilePicture() {
-        $userId = $this->getUserIdFromToken();
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Unauthorized']);
-            return;
-        }
-
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        if (!isset($data['image'])) {
-            http_response_code(400);
-            echo json_encode(['error' => 'No image data provided']);
-            return;
-        }
-
-        $imageData = $data['image'];
-        
-        // Validate base64 image format
-        if (!preg_match('/^data:image\/(jpeg|jpg|png|webp);base64,/', $imageData)) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid image format. Only JPEG, PNG, and WebP are allowed.']);
-            return;
-        }
-
-        // Extract base64 data
-        $base64Data = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
-        $decodedImage = base64_decode($base64Data);
-
-        if ($decodedImage === false) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Invalid base64 encoding']);
-            return;
-        }
-
-        // Check file size (max 2MB)
-        $imageSize = strlen($decodedImage);
-        $maxSize = 2 * 1024 * 1024; // 2MB in bytes
-        
-        if ($imageSize > $maxSize) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Image size exceeds 2MB limit']);
-            return;
-        }
-
-        // Update user's profile picture in database
-        try {
-            $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = ? WHERE id = ?");
-            $stmt->execute([$imageData, $userId]);
-
-            echo json_encode([
-                'message' => 'Profile picture uploaded successfully',
-                'profile_picture' => $imageData
-            ]);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to save profile picture']);
-        }
-    }
-
-    public function removeProfilePicture() {
-        $userId = $this->getUserIdFromToken();
-        if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Unauthorized']);
-            return;
-        }
-
-        try {
-            $stmt = $this->pdo->prepare("UPDATE users SET profile_picture = NULL WHERE id = ?");
-            $stmt->execute([$userId]);
-
-            echo json_encode(['message' => 'Profile picture removed successfully']);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to remove profile picture']);
-        }
     }
 }

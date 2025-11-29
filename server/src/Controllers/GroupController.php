@@ -295,7 +295,7 @@ class GroupController {
 
         // Get Members
         $stmt = $this->pdo->prepare("
-            SELECT u.id, u.name, u.email, u.role, u.profile_picture 
+            SELECT u.id, u.name, u.email, u.role 
             FROM users u 
             WHERE u.group_id = ?
         ");

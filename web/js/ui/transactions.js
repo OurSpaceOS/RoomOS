@@ -158,10 +158,10 @@ export async function renderTransactions() {
                 <div class="transactions-list">
         `;
 
-        // Filter transactions where current user has a share (privacy)
+        // Filter transactions where current user has a share OR paid for it
         const myRelevantTransactions = transactions.filter(t => {
             const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
-            return splitBetween.includes(currentUser.id);
+            return splitBetween.includes(currentUser.id) || t.user_id === currentUser.id;
         });
         
         // Generate consistent colors for each user
