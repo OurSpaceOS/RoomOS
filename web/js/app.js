@@ -246,4 +246,64 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.token) {
         startUpdateChecker();
     }
+
+    // Scroll-based header and dock hide/show
+    let lastScrollY = 0;
+    let ticking = false;
+    const scrollThreshold = 5; // Minimum scroll amount to trigger hide/show
+    
+    const viewContainer = document.getElementById('view-container');
+    const header = document.querySelector('.app-header');
+    const bottomNav = document.querySelector('.bottom-nav');
+    
+    function getScrollTop() {
+        // Try viewContainer first, then fall back to document/window scroll
+        if (viewContainer && viewContainer.scrollTop > 0) {
+            return viewContainer.scrollTop;
+        }
+        return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    }
+    
+    function handleScroll() {
+        const currentScrollY = getScrollTop();
+        const scrollDelta = currentScrollY - lastScrollY;
+        
+        // Only trigger if scroll amount exceeds threshold
+        if (Math.abs(scrollDelta) > scrollThreshold) {
+            if (scrollDelta > 0 && currentScrollY > 50) {
+                // Scrolling down (content moving up) - HIDE header and dock
+                if (header) header.classList.add('header-hidden');
+                if (bottomNav && bottomNav.style.display !== 'none') {
+                    bottomNav.classList.add('dock-hidden');
+                }
+            } else if (scrollDelta < 0) {
+                // Scrolling up (content moving down) - SHOW header and dock
+                if (header) header.classList.remove('header-hidden');
+                if (bottomNav) bottomNav.classList.remove('dock-hidden');
+            }
+            lastScrollY = currentScrollY;
+        }
+        
+        // Always show when at top
+        if (currentScrollY <= 10) {
+            if (header) header.classList.remove('header-hidden');
+            if (bottomNav) bottomNav.classList.remove('dock-hidden');
+            lastScrollY = 0;
+        }
+        
+        ticking = false;
+    }
+    
+    function onScroll() {
+        if (!ticking) {
+            requestAnimationFrame(handleScroll);
+            ticking = true;
+        }
+    }
+    
+    // Listen on both viewContainer and window for maximum compatibility
+    if (viewContainer) {
+        viewContainer.addEventListener('scroll', onScroll, { passive: true });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
 });

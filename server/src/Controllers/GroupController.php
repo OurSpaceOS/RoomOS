@@ -293,9 +293,9 @@ class GroupController {
             return;
         }
 
-        // Get Members
+        // Get Members (include profile pictures)
         $stmt = $this->pdo->prepare("
-            SELECT u.id, u.name, u.email, u.role 
+            SELECT u.id, u.name, u.email, u.role, u.profile_picture 
             FROM users u 
             WHERE u.group_id = ?
         ");

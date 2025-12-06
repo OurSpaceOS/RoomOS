@@ -333,14 +333,13 @@ class TransactionController {
 
         $user = $this->getUserGroup($userId);
 
-        // Get recent transactions
+        // Get all transactions
         $stmt = $this->pdo->prepare("
             SELECT t.*, u.name as user_name 
             FROM transactions t 
             JOIN users u ON t.user_id = u.id 
             WHERE t.group_id = ? 
-            ORDER BY t.created_at DESC 
-            LIMIT 20
+            ORDER BY t.created_at DESC
         ");
         $stmt->execute([$user['group_id']]);
         $transactions = $stmt->fetchAll();
