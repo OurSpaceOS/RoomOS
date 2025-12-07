@@ -2,10 +2,11 @@ import { apiCall } from '../api.js';
 import { showToast } from './toast.js';
 import { getState } from '../state.js';
 import { queueAction } from '../store.js';
+import { transactionsSkeleton } from './skeleton.js';
 
 export async function renderTransactions() {
     const container = document.getElementById('view-container');
-    container.innerHTML = '<div class="flex-center p-4"><div class="loader">Loading...</div></div>';
+    container.innerHTML = transactionsSkeleton();
 
     try {
         const token = localStorage.getItem('token');

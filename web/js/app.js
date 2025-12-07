@@ -15,13 +15,18 @@ import { showToast } from './ui/toast.js';
 import { startUpdateChecker, checkForUpdates } from './ui/updates.js';
 import './sync.js'; // Start sync listener
 
+// Navigation history stack for back button support
+let navigationStack = [];
+let isNavigatingBack = false;
+
 // Expose app to window for global access (e.g. onclick in HTML)
 window.app = {
     navigate: navigate,
     toggleTheme: toggleTheme,
     showToast: showToast,
     toggleChat: toggleChat,
-    checkForUpdates: checkForUpdates // For manual testing
+    checkForUpdates: checkForUpdates, // For manual testing
+    goBack: goBack // For manual back navigation
 };
 
 // Toggle Chat Function
@@ -38,8 +43,24 @@ function toggleChat() {
     }
 }
 
+// Go Back Function - Navigate to previous view
+function goBack() {
+    if (navigationStack.length > 1) {
+        // Remove current view
+        navigationStack.pop();
+        // Get previous view
+        const previousView = navigationStack[navigationStack.length - 1];
+        isNavigatingBack = true;
+        history.back();
+        // The popstate handler will take care of navigation
+    } else {
+        // If only one item in stack, go to dashboard
+        navigate('dashboard');
+    }
+}
+
 // Router
-export function navigate(view) {
+export function navigate(view, pushToHistory = true) {
     const container = document.getElementById('view-container');
     const state = getState();
     const bottomNav = document.querySelector('.bottom-nav');
@@ -69,6 +90,22 @@ export function navigate(view) {
         return;
     }
 
+    // Manage navigation stack and browser history
+    const nonHistoryViews = ['login', 'group_setup', 'forgot-password'];
+    if (!nonHistoryViews.includes(view)) {
+        // Only push to stack if different from current top
+        const currentTop = navigationStack[navigationStack.length - 1];
+        if (currentTop !== view) {
+            navigationStack.push(view);
+            
+            // Push to browser history for back button support
+            if (pushToHistory && !isNavigatingBack) {
+                history.pushState({ view: view }, '', `#${view}`);
+            }
+        }
+    }
+    isNavigatingBack = false;
+
     // Save current view
     if (view !== 'login' && view !== 'group_setup') {
         // Store previous view before entering chat
@@ -95,7 +132,24 @@ export function navigate(view) {
             group_setup: 'Setup',
             'forgot-password': 'Reset Password'
         };
-        headerTitle.textContent = viewTitles[view] || 'RoomOS';
+        
+        // Define which views need a back button and where they go back to
+        const backButtonViews = {
+            'expense-analytics': 'transactions'
+        };
+        
+        // Check if this view needs a back button
+        if (backButtonViews[view]) {
+            const backTarget = backButtonViews[view];
+            headerTitle.innerHTML = `
+                <span onclick="app.navigate('${backTarget}')" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                    <i class="ph ph-arrow-left" style="font-size: 1.1rem;"></i>
+                    ${viewTitles[view] || 'RoomOS'}
+                </span>
+            `;
+        } else {
+            headerTitle.textContent = viewTitles[view] || 'RoomOS';
+        }
     }
 
     // Hide/Show bottom nav and chat button based on view
@@ -219,6 +273,48 @@ document.addEventListener('DOMContentLoaded', () => {
         navigate('login');
     }
 
+    // Handle browser/mobile back button
+    window.addEventListener('popstate', (event) => {
+        if (event.state && event.state.view) {
+            // Navigate to the view from history without pushing new state
+            isNavigatingBack = true;
+            navigate(event.state.view, false);
+            
+            // Update navigation stack
+            if (navigationStack.length > 1) {
+                navigationStack.pop();
+            }
+        } else {
+            // If no state, check URL hash or go to dashboard
+            const hash = window.location.hash.replace('#', '');
+            if (hash && hash !== 'login' && hash !== 'group_setup') {
+                isNavigatingBack = true;
+                navigate(hash, false);
+            } else if (navigationStack.length > 1) {
+                // Navigate to previous in our stack
+                navigationStack.pop();
+                const previousView = navigationStack[navigationStack.length - 1];
+                if (previousView) {
+                    isNavigatingBack = true;
+                    navigate(previousView, false);
+                }
+            } else {
+                // Prevent exit - push dashboard back to history
+                const currentView = localStorage.getItem('last_view') || 'dashboard';
+                if (currentView !== 'login' && currentView !== 'group_setup') {
+                    history.pushState({ view: currentView }, '', `#${currentView}`);
+                }
+            }
+        }
+    });
+
+    // Set initial history state
+    const initialView = localStorage.getItem('last_view') || 'dashboard';
+    if (initialView !== 'login' && initialView !== 'group_setup') {
+        history.replaceState({ view: initialView }, '', `#${initialView}`);
+        navigationStack.push(initialView);
+    }
+
     // Register Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
@@ -271,22 +367,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Only trigger if scroll amount exceeds threshold
         if (Math.abs(scrollDelta) > scrollThreshold) {
             if (scrollDelta > 0 && currentScrollY > 50) {
-                // Scrolling down (content moving up) - HIDE header and dock
-                if (header) header.classList.add('header-hidden');
+                // Scrolling down (content moving up) - HIDE dock only (header stays fixed)
                 if (bottomNav && bottomNav.style.display !== 'none') {
                     bottomNav.classList.add('dock-hidden');
                 }
             } else if (scrollDelta < 0) {
-                // Scrolling up (content moving down) - SHOW header and dock
-                if (header) header.classList.remove('header-hidden');
+                // Scrolling up (content moving down) - SHOW dock
                 if (bottomNav) bottomNav.classList.remove('dock-hidden');
             }
             lastScrollY = currentScrollY;
         }
         
-        // Always show when at top
+        // Always show dock when at top
         if (currentScrollY <= 10) {
-            if (header) header.classList.remove('header-hidden');
             if (bottomNav) bottomNav.classList.remove('dock-hidden');
             lastScrollY = 0;
         }

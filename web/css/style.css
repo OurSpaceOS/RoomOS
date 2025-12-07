@@ -133,44 +133,63 @@ body {
 
 .app-header {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 600px;
   z-index: 100;
-  padding: var(--space-md) var(--space-lg);
+  padding: 14px var(--space-lg);
   background: var(--bg-card);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-lg);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
 
 .app-header.header-hidden {
-  transform: translateY(-100%);
+  transform: translateX(-50%) translateY(calc(-100% - var(--space-md)));
   opacity: 0;
   pointer-events: none;
 }
 
 .app-header h1 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   background: var(--accent-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 #view-container {
   flex: 1;
   padding: var(--space-lg);
   padding-bottom: 120px;
-  margin-top: 60px;
-  /* Account for fixed header */
+  margin-top: 80px;
+  /* Account for fixed floating header with rounded corners */
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -343,11 +362,11 @@ body {
 /* --- BOTTOM NAV (DOCK) --- */
 .bottom-nav {
   position: fixed;
-  bottom: var(--space-lg);
+  bottom: var(--space-xl);
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 480px;
+  width: calc(100% - 40px);
+  max-width: 500px;
 
   display: flex;
   align-items: center;
@@ -359,7 +378,7 @@ body {
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid var(--border-medium);
   border-radius: var(--radius-xl);
-  padding: 12px 8px;
+  padding: 14px 12px;
   box-shadow: var(--shadow-xl);
 
   z-index: 1000;
@@ -1049,15 +1068,18 @@ details[open]>.details-summary-profile i {
 /* --- RESPONSIVE --- */
 @media (max-width: 640px) {
   .app-header {
-    padding: var(--space-md);
+    padding: 12px var(--space-md);
+    width: calc(100% - 16px);
+    top: var(--space-sm);
   }
 
   .app-header h1 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
 
   #view-container {
     padding: var(--space-md);
+    margin-top: 72px;
   }
 
   .card {
@@ -1065,7 +1087,8 @@ details[open]>.details-summary-profile i {
   }
 
   .bottom-nav {
-    width: calc(100% - 16px);
+    width: calc(100% - 24px);
     bottom: var(--space-md);
+    padding: 12px 10px;
   }
 }

@@ -1,10 +1,11 @@
 import { apiCall } from '../api.js';
 import { showToast } from './toast.js';
 import { getState } from '../state.js';
+import { profileSkeleton } from './skeleton.js';
 
 export async function renderProfile() {
   const container = document.getElementById('view-container');
-  container.innerHTML = '<div class="flex-center p-4"><div class="loader">Loading...</div></div>';
+  container.innerHTML = profileSkeleton();
 
   try {
     const token = localStorage.getItem('token');

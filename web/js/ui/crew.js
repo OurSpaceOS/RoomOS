@@ -1,8 +1,9 @@
 import { apiCall } from '../api.js';
+import { crewSkeleton } from './skeleton.js';
 
 export async function renderCrew() {
     const container = document.getElementById('view-container');
-    container.innerHTML = '<div class="flex-center p-4"><div class="loader">Loading...</div></div>';
+    container.innerHTML = crewSkeleton();
 
     try {
         const token = localStorage.getItem('token');

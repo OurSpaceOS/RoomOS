@@ -1,10 +1,11 @@
 import { apiCall } from '../api.js';
 import { getState } from '../state.js';
 import { showToast } from './toast.js';
+import { rosterSkeleton } from './skeleton.js';
 
 export async function renderRoster() {
     const container = document.getElementById('view-container');
-    container.innerHTML = '<div class="flex-center p-4"><div class="loader">Loading...</div></div>';
+    container.innerHTML = rosterSkeleton();
 
     try {
         const token = localStorage.getItem('token');
