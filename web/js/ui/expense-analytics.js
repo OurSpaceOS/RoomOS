@@ -54,6 +54,41 @@ function animateValue(elementId, start, end, duration) {
     requestAnimationFrame(update);
 }
 
+// Get budget status (color and label) based on percentage used
+function getBudgetStatus(percentUsed) {
+    if (percentUsed >= 100) {
+        return { color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.15)', label: 'Over Budget!', icon: 'ph-warning' };
+    } else if (percentUsed >= 85) {
+        return { color: '#f97316', bgColor: 'rgba(249, 115, 22, 0.15)', label: 'Almost There', icon: 'ph-warning-circle' };
+    } else if (percentUsed >= 50) {
+        return { color: '#eab308', bgColor: 'rgba(234, 179, 8, 0.15)', label: 'On Track', icon: 'ph-check-circle' };
+    } else {
+        return { color: '#22c55e', bgColor: 'rgba(34, 197, 94, 0.15)', label: 'Under Budget', icon: 'ph-check-circle' };
+    }
+}
+
+// Create circular progress bar SVG for budget
+function createBudgetProgressRing(percentUsed, status) {
+    const size = 100;
+    const strokeWidth = 10;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const clampedPercent = Math.min(percentUsed, 100);
+    const dashOffset = circumference - (clampedPercent / 100) * circumference;
+    
+    return `
+        <svg width="${size}" height="${size}" style="transform: rotate(-90deg);">
+            <circle cx="${size/2}" cy="${size/2}" r="${radius}" 
+                    fill="none" stroke="var(--bg-tertiary)" stroke-width="${strokeWidth}"/>
+            <circle cx="${size/2}" cy="${size/2}" r="${radius}"
+                    fill="none" stroke="${status.color}" stroke-width="${strokeWidth}"
+                    stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"
+                    stroke-linecap="round"
+                    style="transition: stroke-dashoffset 0.8s ease-out;"/>
+        </svg>
+    `;
+}
+
 // Render skeleton loader
 function renderSkeleton() {
     return `
@@ -199,9 +234,10 @@ export async function renderExpenseAnalytics() {
 
     try {
         const token = localStorage.getItem('token');
-        const [transRes, membersRes] = await Promise.all([
+        const [transRes, membersRes, budgetRes] = await Promise.all([
             apiCall('/transactions/list', 'GET', null, token),
-            apiCall('/group/members', 'GET', null, token)
+            apiCall('/group/members', 'GET', null, token),
+            apiCall('/settings/get?key=monthly_budget', 'GET', null, token).catch(() => ({ value: null }))
         ]);
         
         const transactions = transRes.transactions;
@@ -333,6 +369,26 @@ export async function renderExpenseAnalytics() {
         // Sort months in descending order (newest first)
         const sortedMonths = Object.keys(monthlyData).sort().reverse();
         
+        // Calculate current month's expense for budget tracking
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        // Generate list of available months for budget dropdown (include current month even if no expenses)
+        const availableMonths = [...new Set([currentMonthKey, ...sortedMonths])].sort().reverse();
+        
+        // Default selected month for budget is current month
+        const selectedBudgetMonth = currentMonthKey;
+        const selectedMonthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' });
+        const selectedMonthExpenses = monthlyData[selectedBudgetMonth]?.total || 0;
+        
+        // Load budget from server API (fallback to localStorage for migration)
+        const serverBudget = budgetRes?.value;
+        const monthlyBudget = serverBudget ? parseFloat(serverBudget) : 0;
+        const budgetPercentUsed = monthlyBudget > 0 ? (selectedMonthExpenses / monthlyBudget) * 100 : 0;
+        const budgetStatus = getBudgetStatus(budgetPercentUsed);
+        const budgetRemaining = monthlyBudget - selectedMonthExpenses;
+
+        
         let html = `
             <div class="fade-in" style="padding-bottom: 80px;">
 
@@ -345,6 +401,153 @@ export async function renderExpenseAnalytics() {
                         <span style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Expense Distribution</span>
                     </div>
                     ${createDonutChart(totalShared, totalPersonal, totalExpenses)}
+                </div>
+
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <!-- SECTION: Monthly Budget Tracker -->
+                <!-- ═══════════════════════════════════════════════════════ -->
+                <div class="card" style="
+                    padding: 20px;
+                    margin-bottom: 24px;
+                    background: ${monthlyBudget > 0 ? budgetStatus.bgColor : 'var(--bg-card)'};
+                    border: 1px solid ${monthlyBudget > 0 ? budgetStatus.color + '40' : 'var(--border-subtle)'};
+                    transition: all 0.3s ease;
+                ">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-piggy-bank" style="color: ${monthlyBudget > 0 ? budgetStatus.color : 'var(--accent-primary)'}; font-size: 1.2rem;"></i>
+                            <span style="color: var(--text-primary); font-size: 1rem; font-weight: 600;">Monthly Budget</span>
+                            ${monthlyBudget > 0 ? `
+                            <span style="
+                                background: ${budgetStatus.color}20;
+                                color: ${budgetStatus.color};
+                                padding: 3px 10px;
+                                border-radius: 20px;
+                                font-size: 0.7rem;
+                                font-weight: 600;
+                                display: flex;
+                                align-items: center;
+                                gap: 4px;
+                            ">
+                                <i class="ph ${budgetStatus.icon}"></i>
+                                ${budgetStatus.label}
+                            </span>
+                            ` : ''}
+                        </div>
+                        <button id="set-budget-btn" style="
+                            background: ${monthlyBudget > 0 ? 'var(--bg-input)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+                            color: ${monthlyBudget > 0 ? 'var(--text-primary)' : 'white'};
+                            border: none;
+                            padding: 8px 14px;
+                            border-radius: 10px;
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 6px;
+                            transition: all 0.2s ease;
+                        ">
+                            <i class="ph ${monthlyBudget > 0 ? 'ph-pencil-simple' : 'ph-plus'}"></i>
+                            ${monthlyBudget > 0 ? 'Edit' : 'Set Budget'}
+                        </button>
+                    </div>
+                    
+                    ${monthlyBudget > 0 ? `
+                    <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                        <!-- Progress Ring -->
+                        <div style="position: relative; flex-shrink: 0;">
+                            ${createBudgetProgressRing(budgetPercentUsed, budgetStatus)}
+                            <div style="
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                text-align: center;
+                            ">
+                                <div style="font-size: 1.3rem; font-weight: 800; color: ${budgetStatus.color};">${Math.round(budgetPercentUsed)}%</div>
+                                <div style="font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase;">used</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Budget Stats -->
+                        <div style="flex: 1; min-width: 150px;">
+                            <div style="display: grid; gap: 10px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: var(--text-secondary); font-size: 0.85rem;">Budget</span>
+                                    <span style="color: var(--text-primary); font-weight: 700; font-size: 1rem;">₹${monthlyBudget.toFixed(0)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Spent in</span>
+                                        <select id="budget-month-select" style="
+                                            background: var(--bg-input);
+                                            color: var(--text-primary);
+                                            border: 1px solid var(--border-subtle);
+                                            border-radius: 6px;
+                                            padding: 4px 8px;
+                                            font-size: 0.8rem;
+                                            font-weight: 600;
+                                            cursor: pointer;
+                                            outline: none;
+                                        ">
+                                            ${availableMonths.map(m => {
+                                                const [year, month] = m.split('-');
+                                                const date = new Date(year, parseInt(month) - 1);
+                                                const label = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                                                const isSelected = m === selectedBudgetMonth;
+                                                return `<option value="${m}" ${isSelected ? 'selected' : ''}>${label}</option>`;
+                                            }).join('')}
+                                        </select>
+                                    </div>
+                                    <span id="budget-spent-amount" style="color: ${budgetStatus.color}; font-weight: 700; font-size: 1rem;">₹${selectedMonthExpenses.toFixed(0)}</span>
+                                </div>
+                                <div style="
+                                    display: flex;
+                                    justify-content: space-between;
+                                    align-items: center;
+                                    padding-top: 8px;
+                                    border-top: 1px dashed var(--border-subtle);
+                                ">
+                                    <span id="budget-remaining-label" style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">${budgetRemaining >= 0 ? 'Remaining' : 'Over by'}</span>
+                                    <span id="budget-remaining-amount" style="
+                                        color: ${budgetRemaining >= 0 ? '#22c55e' : '#ef4444'};
+                                        font-weight: 800;
+                                        font-size: 1.15rem;
+                                    ">₹${Math.abs(budgetRemaining).toFixed(0)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : `
+                    <div style="
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 24px 16px;
+                        text-align: center;
+                    ">
+                        <div style="
+                            width: 60px;
+                            height: 60px;
+                            border-radius: 50%;
+                            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin-bottom: 12px;
+                        ">
+                            <i class="ph ph-target" style="font-size: 1.8rem; color: #667eea;"></i>
+                        </div>
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                            Set a Monthly Budget
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); max-width: 240px;">
+                            Track your spending against a goal and get alerts when you're close to your limit
+                        </div>
+                    </div>
+                    `}
                 </div>
 
                 <!-- Your Expense Summary (MOVED DOWN) -->
@@ -816,6 +1019,140 @@ export async function renderExpenseAnalytics() {
                     `;
                 }).join('')}
             </div>
+            
+            <!-- Budget Modal -->
+            <div id="budget-modal" style="
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.85);
+                z-index: 9999;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            ">
+                <div style="
+                    background: var(--bg-card);
+                    border-radius: 20px;
+                    padding: 24px;
+                    max-width: 400px;
+                    width: 100%;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+                    animation: slideIn 0.3s ease-out;
+                ">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="
+                                width: 40px;
+                                height: 40px;
+                                border-radius: 12px;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            ">
+                                <i class="ph ph-piggy-bank" style="color: white; font-size: 1.2rem;"></i>
+                            </div>
+                            <h3 style="margin: 0; font-size: 1.25rem; color: var(--text-primary);">Set Monthly Budget</h3>
+                        </div>
+                        <button id="close-budget-modal" style="
+                            background: none;
+                            border: none;
+                            font-size: 1.3rem;
+                            color: var(--text-tertiary);
+                            cursor: pointer;
+                            padding: 4px;
+                            border-radius: 8px;
+                            transition: all 0.2s;
+                        ">
+                            <i class="ph ph-x"></i>
+                        </button>
+                    </div>
+                    
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 20px 0; line-height: 1.5;">
+                        Set your monthly spending limit to track your expenses and receive alerts when approaching your budget.
+                    </p>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="
+                            display: block;
+                            font-size: 0.85rem;
+                            color: var(--text-secondary);
+                            margin-bottom: 8px;
+                            font-weight: 600;
+                        ">Budget Amount (₹)</label>
+                        <input type="number" id="budget-input" placeholder="e.g. 10000" value="${monthlyBudget > 0 ? monthlyBudget : ''}" style="
+                            width: 100%;
+                            padding: 14px 16px;
+                            font-size: 1.1rem;
+                            border: 2px solid var(--border-subtle);
+                            border-radius: 12px;
+                            background: var(--bg-input);
+                            color: var(--text-primary);
+                            outline: none;
+                            transition: all 0.2s;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    
+                    <!-- Quick presets -->
+                    <div style="margin-bottom: 24px;">
+                        <label style="
+                            display: block;
+                            font-size: 0.8rem;
+                            color: var(--text-tertiary);
+                            margin-bottom: 10px;
+                        ">Quick select:</label>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${[5000, 10000, 15000, 20000, 25000].map(amount => `
+                                <button class="budget-preset-btn" data-amount="${amount}" style="
+                                    background: var(--bg-tertiary);
+                                    border: 1px solid var(--border-subtle);
+                                    color: var(--text-primary);
+                                    padding: 8px 14px;
+                                    border-radius: 8px;
+                                    font-size: 0.85rem;
+                                    font-weight: 600;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                ">₹${amount.toLocaleString()}</button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px;">
+                        ${monthlyBudget > 0 ? `
+                        <button id="clear-budget-btn" style="
+                            flex: 1;
+                            background: rgba(239, 68, 68, 0.1);
+                            color: #ef4444;
+                            border: 1px solid #ef444440;
+                            padding: 14px;
+                            border-radius: 12px;
+                            font-size: 0.95rem;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        ">Clear Budget</button>
+                        ` : ''}
+                        <button id="save-budget-btn" style="
+                            flex: 2;
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            border: none;
+                            padding: 14px;
+                            border-radius: 12px;
+                            font-size: 0.95rem;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.2s;
+                        ">${monthlyBudget > 0 ? 'Update Budget' : 'Set Budget'}</button>
+                    </div>
+                </div>
+            </div>
         `;
 
         container.innerHTML = html;
@@ -954,6 +1291,157 @@ export async function renderExpenseAnalytics() {
                 }
             }
         });
+        
+        // ═══════════════════════════════════════════════════════
+        // Budget Modal Event Handlers
+        // ═══════════════════════════════════════════════════════
+        const budgetModal = document.getElementById('budget-modal');
+        const setBudgetBtn = document.getElementById('set-budget-btn');
+        const closeBudgetBtn = document.getElementById('close-budget-modal');
+        const saveBudgetBtn = document.getElementById('save-budget-btn');
+        const clearBudgetBtn = document.getElementById('clear-budget-btn');
+        const budgetInput = document.getElementById('budget-input');
+        
+        // Open budget modal
+        if (setBudgetBtn && budgetModal) {
+            setBudgetBtn.addEventListener('click', () => {
+                budgetModal.style.display = 'flex';
+                if (budgetInput) budgetInput.focus();
+            });
+        }
+        
+        // Close budget modal
+        const closeBudgetModal = () => {
+            if (budgetModal) budgetModal.style.display = 'none';
+        };
+        
+        if (closeBudgetBtn) {
+            closeBudgetBtn.addEventListener('click', closeBudgetModal);
+        }
+        
+        // Close on backdrop click
+        if (budgetModal) {
+            budgetModal.addEventListener('click', (e) => {
+                if (e.target === budgetModal) closeBudgetModal();
+            });
+        }
+        
+        // Preset buttons
+        document.querySelectorAll('.budget-preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const amount = btn.getAttribute('data-amount');
+                if (budgetInput) budgetInput.value = amount;
+                // Highlight selected preset
+                document.querySelectorAll('.budget-preset-btn').forEach(b => {
+                    b.style.background = 'var(--bg-tertiary)';
+                    b.style.borderColor = 'var(--border-subtle)';
+                });
+                btn.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2))';
+                btn.style.borderColor = '#667eea';
+            });
+        });
+        
+        // Save budget
+        if (saveBudgetBtn) {
+            saveBudgetBtn.addEventListener('click', async () => {
+                const value = parseFloat(budgetInput?.value || 0);
+                if (value > 0) {
+                    // Save to server API
+                    try {
+                        saveBudgetBtn.disabled = true;
+                        saveBudgetBtn.textContent = 'Saving...';
+                        const token = localStorage.getItem('token');
+                        await apiCall('/settings/set', 'POST', { key: 'monthly_budget', value: value.toString() }, token);
+                        closeBudgetModal();
+                        // Refresh the page to show updated budget
+                        renderExpenseAnalytics();
+                    } catch (e) {
+                        console.error('Failed to save budget:', e);
+                        saveBudgetBtn.disabled = false;
+                        saveBudgetBtn.textContent = monthlyBudget > 0 ? 'Update Budget' : 'Set Budget';
+                    }
+                } else {
+                    // Shake input to show error
+                    if (budgetInput) {
+                        budgetInput.style.borderColor = '#ef4444';
+                        budgetInput.style.animation = 'shake 0.3s';
+                        setTimeout(() => {
+                            budgetInput.style.borderColor = 'var(--border-subtle)';
+                            budgetInput.style.animation = '';
+                        }, 300);
+                    }
+                }
+            });
+        }
+        
+        // Clear budget
+        if (clearBudgetBtn) {
+            clearBudgetBtn.addEventListener('click', async () => {
+                try {
+                    clearBudgetBtn.disabled = true;
+                    clearBudgetBtn.textContent = 'Clearing...';
+                    const token = localStorage.getItem('token');
+                    await apiCall('/settings/delete', 'POST', { key: 'monthly_budget' }, token);
+                    closeBudgetModal();
+                    renderExpenseAnalytics();
+                } catch (e) {
+                    console.error('Failed to clear budget:', e);
+                    clearBudgetBtn.disabled = false;
+                    clearBudgetBtn.textContent = 'Clear Budget';
+                }
+            });
+        }
+        
+        // Input focus styling
+        if (budgetInput) {
+            budgetInput.addEventListener('focus', () => {
+                budgetInput.style.borderColor = '#667eea';
+            });
+            budgetInput.addEventListener('blur', () => {
+                budgetInput.style.borderColor = 'var(--border-subtle)';
+            });
+        }
+        
+        // Budget month selector - dynamically update spent/remaining when month changes
+        const budgetMonthSelect = document.getElementById('budget-month-select');
+        if (budgetMonthSelect && monthlyBudget > 0) {
+            budgetMonthSelect.addEventListener('change', (e) => {
+                const selectedMonth = e.target.value;
+                const monthExpenses = monthlyData[selectedMonth]?.total || 0;
+                const percentUsed = monthlyBudget > 0 ? (monthExpenses / monthlyBudget) * 100 : 0;
+                const status = getBudgetStatus(percentUsed);
+                const remaining = monthlyBudget - monthExpenses;
+                
+                // Update spent amount
+                const spentEl = document.getElementById('budget-spent-amount');
+                if (spentEl) {
+                    spentEl.textContent = `₹${monthExpenses.toFixed(0)}`;
+                    spentEl.style.color = status.color;
+                }
+                
+                // Update remaining label and amount
+                const remainingLabel = document.getElementById('budget-remaining-label');
+                const remainingAmount = document.getElementById('budget-remaining-amount');
+                if (remainingLabel && remainingAmount) {
+                    remainingLabel.textContent = remaining >= 0 ? 'Remaining' : 'Over by';
+                    remainingAmount.textContent = `₹${Math.abs(remaining).toFixed(0)}`;
+                    remainingAmount.style.color = remaining >= 0 ? '#22c55e' : '#ef4444';
+                }
+                
+                // Update progress ring percentage
+                const percentEl = document.querySelector('#slot-display div div'); // First inner div has the percentage
+                // For a more robust update, we'd need to re-render the progress ring
+                // For now, just update the percentage text in the center
+                const centerDiv = document.querySelector('[style*="transform: translate(-50%, -50%)"]');
+                if (centerDiv) {
+                    const percentDiv = centerDiv.querySelector('div');
+                    if (percentDiv) {
+                        percentDiv.textContent = `${Math.round(percentUsed)}%`;
+                        percentDiv.style.color = status.color;
+                    }
+                }
+            });
+        }
         
         // Animate numbers after render
         setTimeout(() => {

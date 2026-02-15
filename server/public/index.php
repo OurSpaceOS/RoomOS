@@ -134,6 +134,13 @@ $routes = [
     // Updates
     '/updates/check' => ['UpdateController', 'getLatestUpdate'],
     
+    // Settings
+    '/settings/get' => ['SettingsController', 'get'],
+    '/settings/set' => ['SettingsController', 'set'],
+    '/settings/delete' => ['SettingsController', 'delete'],
+    '/settings/group-get' => ['SettingsController', 'getGroupSetting'],
+    '/settings/group-set' => ['SettingsController', 'setGroupSetting'],
+    
     // Test
     '/test' => ['TestController', 'index'],
 ];

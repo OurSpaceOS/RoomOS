@@ -159,16 +159,7 @@ export async function renderTransactions() {
                 <div class="transactions-list">
         `;
 
-        // Debug: Log all transactions
-        console.log('Total transactions from API:', transactions.length);
-        console.log('Current user ID:', currentUser.id);
-        console.log('Sample transaction:', transactions[0]);
-        
-        // TEMPORARILY DISABLED FILTER - SHOWING ALL TRANSACTIONS
         // Filter transactions where current user has a share OR paid for it
-        const myRelevantTransactions = transactions; // SHOWING ALL FOR DEBUGGING
-        
-        /* ORIGINAL FILTER CODE (temporarily disabled):
         const myRelevantTransactions = transactions.filter(t => {
             let splitBetween = [];
             
@@ -193,9 +184,6 @@ export async function renderTransactions() {
             
             return isInSplit || isPayer;
         });
-        */
-        
-        console.log('Showing transactions:', myRelevantTransactions.length);
         
         // Generate consistent colors and profile pictures for each user
         const userColors = {};

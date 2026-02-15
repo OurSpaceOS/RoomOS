@@ -55,11 +55,35 @@ export async function renderDashboard() {
         // Helper for names
         const teamNames = activeTeam.length ? activeTeam.map(x => x.n).join(' + ') : 'No One Assigned';
 
-        // Fetch group members for the dish spinner
+        // Fetch group members for the dish spinner and today's dish duty assignment
         let members = [];
+        let todaysDishDuty = null;
+        let isSpinnerLocked = false;
+        let lockRemainingMinutes = 0;
         try {
             const membersRes = await apiCall('/group/members', 'GET', null, token);
             members = membersRes.members || [];
+            
+            // Fetch today's dish duty from server
+            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+            const dishDutyRes = await apiCall(`/settings/group-get?key=dish_duty&date=${today}`, 'GET', null, token).catch(() => ({ value: null }));
+            if (dishDutyRes?.value) {
+                todaysDishDuty = typeof dishDutyRes.value === 'string' ? JSON.parse(dishDutyRes.value) : dishDutyRes.value;
+                
+                // Check if locked (within 1 hour of last spin)
+                if (dishDutyRes.updated_at) {
+                    const updatedAt = new Date(dishDutyRes.updated_at);
+                    const now = new Date();
+                    const diffMs = now - updatedAt;
+                    const diffMinutes = diffMs / (1000 * 60);
+                    const lockDurationMinutes = 60; // 1 hour lock
+                    
+                    if (diffMinutes < lockDurationMinutes) {
+                        isSpinnerLocked = true;
+                        lockRemainingMinutes = Math.ceil(lockDurationMinutes - diffMinutes);
+                    }
+                }
+            }
         } catch (e) {
             console.error('Failed to fetch members for spinner:', e);
         }
@@ -138,8 +162,8 @@ export async function renderDashboard() {
                                 <div id="slot-name" style="
                                     font-size: 1.5rem;
                                     font-weight: 800;
-                                    color: #4ECDC4;
-                                    text-shadow: 0 0 20px rgba(78, 205, 196, 0.5), 0 0 40px rgba(78, 205, 196, 0.3);
+                                    color: ${todaysDishDuty ? '#10b981' : '#4ECDC4'};
+                                    text-shadow: ${todaysDishDuty ? '0 0 30px rgba(16, 185, 129, 0.8), 0 0 60px rgba(16, 185, 129, 0.4)' : '0 0 20px rgba(78, 205, 196, 0.5), 0 0 40px rgba(78, 205, 196, 0.3)'};
                                     font-family: 'Courier New', monospace;
                                     letter-spacing: 2px;
                                     min-height: 36px;
@@ -147,7 +171,7 @@ export async function renderDashboard() {
                                     align-items: center;
                                     justify-content: center;
                                 ">
-                                    ${members.length > 0 ? '? ? ?' : 'NO CREW'}
+                                    ${todaysDishDuty ? todaysDishDuty.user_name.toUpperCase() : (members.length > 0 ? '? ? ?' : 'NO CREW')}
                                 </div>
                             </div>
                             
@@ -158,7 +182,31 @@ export async function renderDashboard() {
                         </div>
                         
                         <!-- Result Area -->
-                        <div id="dish-result" style="margin-top: 24px; min-height: 60px;"></div>
+                        <div id="dish-result" style="margin-top: 24px; min-height: 60px;">
+                            ${todaysDishDuty ? `
+                                <div style="
+                                    display: inline-flex;
+                                    align-items: center;
+                                    gap: 12px;
+                                    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+                                    border: 2px solid #10b981;
+                                    border-radius: 50px;
+                                    padding: 12px 24px;
+                                ">
+                                    <span style="font-size: 1.5rem;">🧽</span>
+                                    <span style="font-weight: 700; color: #10b981; font-size: 1rem;">
+                                        ${todaysDishDuty.user_name} is on dish duty today!
+                                    </span>
+                                    <span style="font-size: 1.5rem;">✨</span>
+                                </div>
+                                ${isSpinnerLocked ? `
+                                <div style="margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-tertiary); font-size: 0.8rem;">
+                                    <i class="ph ph-lock" style="color: #f59e0b;"></i>
+                                    <span>Locked for ${lockRemainingMinutes} min</span>
+                                </div>
+                                ` : ''}
+                            ` : ''}
+                        </div>
                         
                         <!-- Spin Button -->
                         <button id="spin-dish-btn" style="
@@ -166,23 +214,22 @@ export async function renderDashboard() {
                             padding: 16px 48px;
                             font-size: 1.1rem;
                             font-weight: 700;
-                            background: linear-gradient(145deg, #FF6B6B, #EE5A6F);
+                            background: ${isSpinnerLocked ? 'linear-gradient(145deg, #6b7280, #4b5563)' : 'linear-gradient(145deg, #FF6B6B, #EE5A6F)'};
                             color: white;
                             border: none;
                             border-radius: 50px;
-                            cursor: pointer;
-                            box-shadow: 
-                                0 6px 20px rgba(238, 90, 111, 0.4),
-                                0 2px 0 rgba(255,255,255,0.2) inset;
+                            cursor: ${isSpinnerLocked ? 'not-allowed' : 'pointer'};
+                            box-shadow: ${isSpinnerLocked ? '0 4px 12px rgba(107, 114, 128, 0.3)' : '0 6px 20px rgba(238, 90, 111, 0.4), 0 2px 0 rgba(255,255,255,0.2) inset'};
                             transition: all 0.2s ease;
                             text-transform: uppercase;
                             letter-spacing: 1px;
-                        " ${members.length === 0 ? 'disabled' : ''}>
-                            🎰 Spin!
+                            opacity: ${isSpinnerLocked ? '0.7' : '1'};
+                        " ${members.length === 0 || isSpinnerLocked ? 'disabled' : ''}>
+                            ${isSpinnerLocked ? `🔒 Locked (${lockRemainingMinutes}m)` : '🎰 Spin!'}
                         </button>
                         
                         <p style="margin-top: 16px; font-size: 0.8rem; color: var(--text-tertiary);">
-                            Let fate decide who's on dish duty! ✨
+                            ${isSpinnerLocked ? '⏰ Wait for the lock to expire to spin again' : 'Let fate decide who\'s on dish duty! ✨'}
                         </p>
                     </div>
                     
@@ -285,6 +332,14 @@ export async function renderDashboard() {
                                     }
                                 </style>
                             `;
+                            
+                            // Save dish duty result to server (group setting for today)
+                            const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' }); // YYYY-MM-DD format
+                            apiCall('/settings/group-set', 'POST', {
+                                key: 'dish_duty',
+                                value: { user_id: winner.id, user_name: winner.name },
+                                date: today
+                            }, token).catch(e => console.error('Failed to save dish duty:', e));
                             
                             spinBtn.disabled = false;
                             spinBtn.innerHTML = '🎰 Spin Again!';
