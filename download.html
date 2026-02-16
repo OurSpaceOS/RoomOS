@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download | RoomOS for Android</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="landing.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .download-page { padding-top: 180px; padding-bottom: 100px; display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+        .download-box { max-width: 500px; width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 60px 40px; text-align: center; }
+        .d-icon { width: 80px; height: 80px; background: rgba(94, 92, 230, 0.1); border-radius: 20px; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 32px; }
+        .d-btn { display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--primary); color: #fff; text-decoration: none; padding: 20px; border-radius: var(--radius-md); font-weight: 700; font-size: 1.2rem; margin-bottom: 24px; transition: var(--transition); }
+        .d-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--primary-glow); }
+        .d-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; padding-top: 32px; border-top: 1px solid var(--border); margin-top: 32px; }
+        .s-item span { display: block; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .s-item b { font-size: 1rem; color: var(--text-dim); }
+    </style>
+</head>
+
+<body>
+    <div class="glow-system"><div class="glow-1"></div></div>
+
+    <nav class="main-nav">
+        <div class="container nav-wrap">
+            <a href="index.html" class="brand"><i class="ph-fill ph-house-line"></i><span>RoomOS</span></a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="index.html#demo">Showcase</a>
+                <a href="changelog.html">Changelog</a>
+                <a href="download.html" class="active">Download APK</a>
+                <button id="theme-toggle" class="theme-toggle-btn">
+                    <i class="ph ph-sun"></i>
+                </button>
+                <a href="web/index.html" class="btn-nav">Launch App</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="download-page">
+        <div class="download-box">
+            <div class="d-icon"><i class="ph-fill ph-android-logo"></i></div>
+            <h1>RoomOS v2.6.0</h1>
+            <p style="color: var(--text-dim); margin-bottom: 40px;">The complete domestic management suite for your Android device.</p>
+            
+            <a href="https://github.com/Sumit7739/RoomOS_V2/releases/download/v2.6.0/roomos-v2.6.0-release.apk" class="d-btn">
+                <i class="ph-fill ph-download-simple"></i>
+                Download APK
+            </a>
+            
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Direct secure download (35MB)</p>
+
+            <div class="d-specs">
+                <div class="s-item">
+                    <span>Package</span>
+                    <b>com.homesyncos.roomos.roomos</b>
+                </div>
+                <div class="s-item">
+                    <span>Minimum OS</span>
+                    <b>Android 8.0+</b>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-bottom">
+            <p>&copy; 2026 RoomOS Project. Developed by Sumit Srivastava</p>
+        </div>
+    </footer>
+    <script src="theme.js"></script>
+</body>
+
+</html>

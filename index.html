@@ -4,592 +4,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomOS - Streamline Your Shared Living Experience</title>
+    <title>RoomOS | Shared Living, Simplified</title>
     <meta name="description"
-        content="RoomOS is a comprehensive platform designed to streamline the management of shared living spaces. Coordinate chores, expenses, schedules, and communication effortlessly.">
+        content="The all-in-one platform for effortless roommate coordination. Track expenses, chores, and sync everything offline-first.">
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="landing.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 
 <body>
-    <!-- 3D Background Canvas -->
-    <canvas id="bg-canvas"></canvas>
-
-    <!-- Download Modal -->
-    <div class="modal" id="downloadModal">
-        <div class="modal-overlay" onclick="closeDownloadModal()"></div>
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeDownloadModal()">&times;</button>
-            <div class="modal-header">
-                <div class="modal-icon">
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none">
-                        <path
-                            d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-2.86-1.21-6.08-1.21-8.94 0L5.65 5.67c-.19-.28-.55-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C2.92 11.03 1 14.22 1 17.8h22c0-3.58-1.92-6.77-5.4-8.32zM8.06 15.2c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2zm7.88 0c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2z"
-                            fill="url(#android-gradient)" />
-                        <defs>
-                            <linearGradient id="android-gradient" x1="0" y1="0" x2="24" y2="24">
-                                <stop offset="0%" stop-color="#3ddc84" />
-                                <stop offset="100%" stop-color="#2bb673" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <h2 class="modal-title">Download RoomOS for Android</h2>
-                <p class="modal-subtitle">Get started with the mobile app</p>
-            </div>
-            <div class="modal-body">
-                <div class="requirement-card">
-                    <h3>Minimum Requirements</h3>
-                    <ul class="requirement-list">
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#3ddc84" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <span><strong>Android 8.0</strong> or higher</span>
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#3ddc84" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <span><strong>50 MB</strong> free storage space</span>
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#3ddc84" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <span><strong>Internet connection</strong> for sync</span>
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#3ddc84" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <span><strong>2 GB RAM</strong> recommended</span>
-                        </li>
-                    </ul>
-                </div>
-                <div class="download-info">
-                    <p class="info-text">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <circle cx="10" cy="10" r="8" stroke="#667eea" stroke-width="2" />
-                            <path d="M10 6V10M10 14H10.01" stroke="#667eea" stroke-width="2" stroke-linecap="round" />
-                        </svg>
-                        Version 1.0.0 • 45 MB • Last updated: Nov 2025
-                    </p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-modal-download" onclick="window.location.href='https://github.com/Sumit7739/RoomOS_V2/releases/download/v2.1.3/roomos-release.apk'">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <path d="M10 3V13M10 13L6 9M10 13L14 9M3 17H17" stroke="currentColor" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                    Download APK
-                </button>
-                <p class="modal-note">Coming soon to Google Play Store</p>
-            </div>
-        </div>
+    <!-- Immersive Background -->
+    <div class="glow-system">
+        <div class="glow-1"></div>
+        <div class="glow-2"></div>
     </div>
 
     <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                    <rect width="40" height="40" rx="10" fill="url(#logo-gradient)" />
-                    <path d="M12 16L20 12L28 16V24L20 28L12 24V16Z" stroke="white" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round" />
-                    <defs>
-                        <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40">
-                            <stop offset="0%" stop-color="#667eea" />
-                            <stop offset="100%" stop-color="#764ba2" />
-                        </linearGradient>
-                    </defs>
-                </svg>
-                <span class="logo-text">RoomOS</span>
+    <nav class="main-nav">
+        <div class="container nav-wrap">
+            <a href="index.html" class="brand">
+                <i class="ph-fill ph-house-line"></i>
+                <span>RoomOS</span>
+            </a>
+            <div class="nav-links" id="nav-links">
+                <a href="#features">Features</a>
+                <a href="#demo">Showcase</a>
+                <a href="changelog.html">Changelog</a>
+                <a href="download.html">Download APK</a>
+                <button id="theme-toggle" class="theme-toggle-btn">
+                    <i class="ph ph-sun"></i>
+                </button>
+                <a href="web/index.html" class="btn-nav">Launch App</a>
             </div>
-            <div class="nav-links">
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#demo" class="nav-link">Demo</a>
-                <a href="#pricing" class="nav-link">Pricing</a>
-                <a href="#download" class="nav-link">Download</a>
-                <a href="web/index.html" class="btn-primary">Launch App</a>
-            </div>
-            <button class="mobile-menu-btn" id="mobile-menu-btn">
-                <span></span>
-                <span></span>
-                <span></span>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="ph ph-list"></i>
             </button>
         </div>
     </nav>
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobile-menu">
-        <a href="#features" class="mobile-nav-link">Features</a>
-        <a href="#demo" class="mobile-nav-link">Demo</a>
-        <a href="#pricing" class="mobile-nav-link">Pricing</a>
-        <a href="#download" class="mobile-nav-link">Download</a>
-        <a href="web/index.html" class="btn-primary">Launch App</a>
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="badge-new">Version 2.6.0 is out</div>
+                <h1>Shared Living, <br><span>Perfectly Balanced.</span></h1>
+                <p>The operating system your shared home deserves. Coordinate chores, settle expenses, and stay in sync—even when you're offline.</p>
+                <div class="hero-btns">
+                    <a href="web/index.html" class="btn-primary">Get Started Free</a>
+                    <a href="download.html" class="btn-secondary">Download Android</a>
+                </div>
+            </div>
+            <div class="hero-image-wrap">
+                <div class="mockup-container">
+                    <img src="img/dashdark.png" alt="RoomOS App" class="hero-main-img">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stat Bar -->
+    <div class="stat-bar">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <h3>10K+</h3>
+                    <p>Global Residents</p>
+                </div>
+                <div class="stat-item">
+                    <h3>500K+</h3>
+                    <p>Tasks Completed</p>
+                </div>
+                <div class="stat-item">
+                    <h3>$2M+</h3>
+                    <p>Bills Settled</p>
+                </div>
+                <div class="stat-item">
+                    <h3>99.9%</h3>
+                    <p>Uptime Record</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-text">
-                <h1 class="hero-title">
-                    <span class="gradient-text">Revolutionize</span>
-                    <br>Your Shared Living
-                </h1>
-                <p class="hero-description">
-                    Coordinate chores, track expenses, and communicate seamlessly with your roommates.
-                    All in one beautiful, intuitive platform.
-                </p>
-                <div class="hero-buttons">
-                    <a href="web/index.html" class="btn-hero-primary">
-                        Get Started Free
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </a>
-                    <button onclick="openDownloadModal()" class="btn-hero-android">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-2.86-1.21-6.08-1.21-8.94 0L5.65 5.67c-.19-.28-.55-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C2.92 11.03 1 14.22 1 17.8h22c0-3.58-1.92-6.77-5.4-8.32zM8.06 15.2c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2zm7.88 0c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2z" />
-                        </svg>
-                        Download for Android
-                    </button>
-                    <a href="#demo" class="btn-hero-secondary">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M6.66667 5L13.3333 10L6.66667 15V5Z" fill="currentColor" />
-                        </svg>
-                        Watch Demo
-                    </a>
+    <!-- Core Feature Rows (Zig-Zag) -->
+    <section id="features" class="zigzag-features">
+        <div class="container">
+            <!-- 1. Interactive Dashboard -->
+            <div class="zigzag-row">
+                <div class="zigzag-content" data-reveal="left">
+                    <span class="sub">Control Center</span>
+                    <h2>Interactive Dashboard</h2>
+                    <p>The heartbeat of your home. Track the <strong>Live Protocol</strong> in real-time, see who's currently assigned to cook or clean, and manage urgent micro-tasks with a single tap.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Live Status Updates (IST Timezone)</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Today's Micro-Tasks & Lottery</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Instant Maid Attendance Summary</li>
+                    </ul>
                 </div>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-number">10K+</div>
-                        <div class="stat-label">Active Users</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">500K+</div>
-                        <div class="stat-label">Tasks Managed</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-number">$2M+</div>
-                        <div class="stat-label">Expenses Tracked</div>
+                <div class="zigzag-visual" data-reveal="right">
+                    <div class="mockup-container">
+                        <img src="img/dashdark.png" alt="Dashboard" class="hero-main-img">
                     </div>
                 </div>
             </div>
-            <div class="hero-visual">
-                <div class="floating-card card-1">
-                    <div class="card-icon">💰</div>
-                    <div class="card-content">
-                        <div class="card-title">Rent Payment</div>
-                        <div class="card-amount">$1,200</div>
-                    </div>
-                </div>
-                <div class="floating-card card-2">
-                    <div class="card-icon">🧹</div>
-                    <div class="card-content">
-                        <div class="card-title">Kitchen Cleaning</div>
-                        <div class="card-status">Due Today</div>
-                    </div>
-                </div>
-                <div class="floating-card card-3">
-                    <div class="card-icon">💬</div>
-                    <div class="card-content">
-                        <div class="card-title">3 New Messages</div>
-                        <div class="card-status">From Sarah</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="scroll-indicator">
-            <div class="mouse">
-                <div class="wheel"></div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="section-header">
-            <span class="section-label">Features</span>
-            <h2 class="section-title">Everything You Need in One Place</h2>
-            <p class="section-description">Powerful features designed to make shared living effortless</p>
-        </div>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-1)" />
-                        <path d="M12 18L20 14L28 18V26L20 30L12 26V18Z" stroke="white" stroke-width="2" />
-                        <defs>
-                            <linearGradient id="icon-gradient-1" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#667eea" />
-                                <stop offset="100%" stop-color="#764ba2" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+            <!-- 2. Smart Roster -->
+            <div class="zigzag-row reverse">
+                <div class="zigzag-content" data-reveal="right">
+                    <span class="sub">Automation</span>
+                    <h2>Smart Roster Logic</h2>
+                    <p>Eliminate domestic friction with automated chore rotations. Our <strong>Regeneration Engine</strong> builds weekly plans based on everyone's class schedules and off-days.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Intelligent Shift Regeneration</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Buffer-Time & Alarm Tracking</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Today View with Morning/Night Pills</li>
+                    </ul>
                 </div>
-                <h3 class="feature-title">Smart Dashboard</h3>
-                <p class="feature-description">Get a quick overview of all your tasks, expenses, and notifications in
-                    one beautiful interface.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-2)" />
-                        <circle cx="20" cy="15" r="4" stroke="white" stroke-width="2" />
-                        <path d="M12 28C12 24 15 22 20 22C25 22 28 24 28 28" stroke="white" stroke-width="2"
-                            stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="icon-gradient-2" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#f093fb" />
-                                <stop offset="100%" stop-color="#f5576c" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+                <div class="zigzag-visual" data-reveal="left">
+                    <div class="mockup-container">
+                        <img src="img/roster.png" alt="Roster" class="hero-main-img">
+                    </div>
                 </div>
-                <h3 class="feature-title">Crew Management</h3>
-                <p class="feature-description">Manage roommate profiles, responsibilities, and preferences with ease.
-                </p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-3)" />
-                        <rect x="12" y="14" width="16" height="14" rx="2" stroke="white" stroke-width="2" />
-                        <path d="M16 12V16M24 12V16M12 20H28" stroke="white" stroke-width="2" stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="icon-gradient-3" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#4facfe" />
-                                <stop offset="100%" stop-color="#00f2fe" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Roster & Planning</h3>
-                <p class="feature-description">Schedule and track cleaning duties, chores, and shared responsibilities
-                    automatically.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-4)" />
-                        <circle cx="20" cy="20" r="8" stroke="white" stroke-width="2" />
-                        <path d="M20 16V20L23 23" stroke="white" stroke-width="2" stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="icon-gradient-4" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#43e97b" />
-                                <stop offset="100%" stop-color="#38f9d7" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Expense Tracking</h3>
-                <p class="feature-description">Split bills, track payments, and settle debts with transparent expense
-                    management.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-5)" />
-                        <rect x="12" y="14" width="16" height="12" rx="2" stroke="white" stroke-width="2" />
-                        <path d="M12 18H28M16 22H18M22 22H24" stroke="white" stroke-width="2" stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="icon-gradient-5" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#fa709a" />
-                                <stop offset="100%" stop-color="#fee140" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Real-time Chat</h3>
-                <p class="feature-description">Communicate instantly with your roommates through our built-in messaging
-                    system.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="12" fill="url(#icon-gradient-6)" />
-                        <path d="M20 12V20M20 28V20M20 20L26 16M20 20L14 16" stroke="white" stroke-width="2"
-                            stroke-linecap="round" />
-                        <defs>
-                            <linearGradient id="icon-gradient-6" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#30cfd0" />
-                                <stop offset="100%" stop-color="#330867" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                </div>
-                <h3 class="feature-title">Offline Support</h3>
-                <p class="feature-description">Access your data and continue working even without an internet
-                    connection.</p>
-            </div>
-        </div>
-    </section>
 
-    <!-- Demo Section with Screenshots -->
-    <section id="demo" class="demo">
-        <div class="section-header">
-            <span class="section-label">See It In Action</span>
-            <h2 class="section-title">Beautiful. Intuitive. Powerful.</h2>
-            <p class="section-description">Experience the future of shared living management</p>
-        </div>
-        <div class="demo-container">
-            <div class="demo-showcase">
-                <div class="phone-mockup">
-                        <div class="phone-screen">
-                            <img src="dashboard.png" alt="Dashboard Screenshot" class="screenshot active"
-                                id="screenshot-1">
-                            <img src="chat.png" alt="Chat Screenshot" class="screenshot" id="screenshot-2">
-                            <img src="expenses.png" alt="Expenses Screenshot" class="screenshot" id="screenshot-3">
-                        </div>
+            <!-- 3. Household Crew -->
+            <div class="zigzag-row">
+                <div class="zigzag-content" data-reveal="left">
+                    <span class="sub">Identity</span>
+                    <h2>Household Crew</h2>
+                    <p>Manage your team with precision. View <strong>Workload Percentages</strong> to ensure chores are distributed fairly, and track member availability at a glance.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Real-time Workload Metrics</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Role-based Access (Admin/Member)</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Profile Personalization with Avatars</li>
+                    </ul>
                 </div>
-                <div class="demo-controls">
-                    <button class="demo-btn active" data-screenshot="1">
-                        <span class="demo-btn-icon">📊</span>
-                        <span class="demo-btn-text">Dashboard</span>
-                    </button>
-                    <button class="demo-btn" data-screenshot="2">
-                        <span class="demo-btn-icon">💬</span>
-                        <span class="demo-btn-text">Chat</span>
-                    </button>
-                    <button class="demo-btn" data-screenshot="3">
-                        <span class="demo-btn-icon">💰</span>
-                        <span class="demo-btn-text">Expenses</span>
-                    </button>
+                <div class="zigzag-visual" data-reveal="right">
+                    <div class="mockup-container">
+                        <img src="img/crew.png" alt="Crew" class="hero-main-img">
+                    </div>
                 </div>
             </div>
-            <div class="demo-features">
-                <div class="demo-feature">
-                    <div class="demo-feature-icon">✨</div>
-                    <div class="demo-feature-content">
-                        <h4>Intuitive Design</h4>
-                        <p>Clean, modern interface that's easy to navigate</p>
+
+            <!-- 4. Maid Attendance -->
+            <div class="zigzag-row reverse">
+                <div class="zigzag-content" data-reveal="right">
+                    <span class="sub">Domestic Help</span>
+                    <h2>Maid Attendance</h2>
+                    <p>Stop guessing and start tracking. High-precision logs for <strong>Domestic Help</strong> with detailed AM/PM history and automatic financial splitting.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Monthly Attendance Calendar</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Cost-per-Person Calculations</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Detailed History Logs</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="left">
+                    <div class="mockup-container">
+                        <img src="img/maidattendance.png" alt="Attendance" class="hero-main-img">
                     </div>
                 </div>
-                <div class="demo-feature">
-                    <div class="demo-feature-icon">🌙</div>
-                    <div class="demo-feature-content">
-                        <h4>Dark Mode</h4>
-                        <p>Easy on the eyes with beautiful dark theme</p>
+            </div>
+
+            <!-- 5. Expense Engine -->
+            <div class="zigzag-row">
+                <div class="zigzag-content" data-reveal="left">
+                    <span class="sub">Finance</span>
+                    <h2>Expense Engine</h2>
+                    <p>Settle bills without the awkwardness. Sophisticated debt tracking with <strong>recursive splitting</strong> and one-tap settling for multiple roommates.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Debt vs Surplus Visualizers</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Smart Multi-Person Splitting</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Offline-First Transaction Sync</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="right">
+                    <div class="mockup-container">
+                        <img src="img/expenses.png" alt="Expenses" class="hero-main-img">
                     </div>
                 </div>
-                <div class="demo-feature">
-                    <div class="demo-feature-icon">📱</div>
-                    <div class="demo-feature-content">
-                        <h4>Fully Responsive</h4>
-                        <p>Works perfectly on all devices and screen sizes</p>
+            </div>
+
+            <!-- 6. Transaction Intelligence (NEW) -->
+            <div class="zigzag-row reverse">
+                <div class="zigzag-content" data-reveal="right">
+                    <span class="sub">Transparency</span>
+                    <h2>Transaction Intelligence</h2>
+                    <p>Get total clarity on every rupee spent. <strong>Itemized Details</strong> show exactly who paid, who owes what, and when the transaction was synced to the cloud.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Full Audit Trails for Every Entry</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Instant Settlement Reminders</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Multi-Currency Support Hooks</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="left">
+                    <div class="mockup-container">
+                        <img src="img/expdetailsdark.png" alt="Expense Details" class="hero-main-img">
                     </div>
                 </div>
-                <div class="demo-feature">
-                    <div class="demo-feature-icon">⚡</div>
-                    <div class="demo-feature-content">
-                        <h4>Lightning Fast</h4>
-                        <p>Optimized performance for instant interactions</p>
+            </div>
+
+            <!-- 7. Visual Analytics -->
+            <div class="zigzag-row">
+                <div class="zigzag-content" data-reveal="left">
+                    <span class="sub">Insights</span>
+                    <h2>Visual Analytics</h2>
+                    <p>Gain deep insights into your spending habits. Our <strong>Donut Distribution</strong> charts and category-wise breakdowns help you stay under budget.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Category Spending Heatmaps</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Shared vs Personal Cost Split</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Monthly Budget Pace Tracking</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="right">
+                    <div class="mockup-container">
+                        <img src="img/expanalytics.png" alt="Analytics 1" class="hero-main-img">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. Spending Distribution (NEW) -->
+            <div class="zigzag-row reverse">
+                <div class="zigzag-content" data-reveal="right">
+                    <span class="sub">Reporting</span>
+                    <h2>Spending Distribution</h2>
+                    <p>Visualize where the money goes with <strong>Categorical Bar Charts</strong>. Identify leaks in your budget and optimize household spending effortlessly.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Top Spending Categories (Groceries, Rent)</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Weekly Spending Velocity</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Individual Contribution Brackets</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="left">
+                    <div class="mockup-container">
+                        <img src="img/expanalytics2.png" alt="Analytics 2" class="hero-main-img">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. Historical Trends (NEW) -->
+            <div class="zigzag-row">
+                <div class="zigzag-content" data-reveal="left">
+                    <span class="sub">History</span>
+                    <h2>Historical Analysis</h2>
+                    <p>Track your financial progress over months. <strong>Time-Series Visualization</strong> helps you understand seasonal spikes and long-term spending patterns.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Month-over-Month Comparisons</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Year-to-Date Summary Charts</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Predictive Budget Forecasting</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="right">
+                    <div class="mockup-container">
+                        <img src="img/expanalytics3.png" alt="Analytics 3" class="hero-main-img">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 10. Identity & Profile -->
+            <div class="zigzag-row reverse">
+                <div class="zigzag-content" data-reveal="right">
+                    <span class="sub">Security</span>
+                    <h2>Identity & Profile</h2>
+                    <p>Your unique digital footprint in the house. Manage your <strong>Weekly Schedule</strong>, reset your secure access tokens, and personalize your experience with biometric-ready profile settings.</p>
+                    <ul class="feature-list">
+                        <li><i class="ph-bold ph-check-circle"></i> Weekly Availability Outlines</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Secure Token Management</li>
+                        <li><i class="ph-bold ph-check-circle"></i> One-Tap Logout & Account Purge</li>
+                    </ul>
+                </div>
+                <div class="zigzag-visual" data-reveal="left">
+                    <div class="mockup-container">
+                        <img src="img/profile.png" alt="Profile" class="hero-main-img">
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Video Section -->
-    <!-- <section class="video-section">
-        <div class="video-container">
-            <div class="video-content">
-                <h2 class="video-title">See How RoomOS Works</h2>
-                <p class="video-description">Watch our complete walkthrough of the roomOS application</p>
-                <div class="video-wrapper">
-                    <video class="demo-video" controls muted loop playsinline>
-                        <source src="demo-video.webp" type="video/webm">
-                        Your browser does not support the video tag.
-                    </video>
-                </div>
-            </div>
-        </div> 
-    </section> -->
 
     <!-- Download Section -->
-    <section id="download" class="download-section">
-        <div class="download-container">
-            <div class="download-content">
-                <span class="section-label">Download</span>
-                <h2 class="section-title">Get RoomOS on Android</h2>
-                <p class="section-description">Download our mobile app and manage your shared living on the go</p>
-                <div class="download-buttons">
-                    <button onclick="openDownloadModal()" class="btn-download">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                            <path
-                                d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85-.29-.15-.65-.06-.83.22l-1.88 3.24c-2.86-1.21-6.08-1.21-8.94 0L5.65 5.67c-.19-.28-.55-.37-.83-.22-.3.16-.42.54-.26.85l1.84 3.18C2.92 11.03 1 14.22 1 17.8h22c0-3.58-1.92-6.77-5.4-8.32zM8.06 15.2c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2zm7.88 0c-.66 0-1.2-.54-1.2-1.2s.54-1.2 1.2-1.2 1.2.54 1.2 1.2-.54 1.2-1.2 1.2z" />
-                        </svg>
-                        <div class="download-text">
-                            <span class="download-label">GET IT ON</span>
-                            <span class="download-store">Google Play</span>
-                        </div>
-                    </button>
+    <section class="download-cta">
+        <div class="container">
+            <div class="cta-inner">
+                <h2>Take your home to the next level.</h2>
+                <p>Join thousands of roommates already living smarter with RoomOS.</p>
+                <div class="cta-btns">
+                    <a href="web/index.html" class="btn-primary">Launch Web App</a>
+                    <a href="download.html" class="btn-secondary-white">Download APK</a>
                 </div>
-                <p class="download-note">Coming soon to iOS App Store</p>
-            </div>
-            <div class="download-visual">
-                <div class="phone-showcase">
-                    <img src="dashboard.png" alt="RoomOS Mobile App" class="phone-image">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="pricing">
-        <div class="section-header">
-            <span class="section-label">Pricing</span>
-            <h2 class="section-title">Choose Your Plan</h2>
-            <p class="section-description">Simple, transparent pricing for everyone</p>
-        </div>
-        <div class="pricing-grid">
-            <div class="pricing-card">
-                <div class="pricing-header">
-                    <h3 class="pricing-name">Free</h3>
-                    <div class="pricing-price">
-                        <span class="price-currency">₹</span>
-                        <span class="price-amount">0</span>
-                        <span class="price-period">/month</span>
-                    </div>
-                </div>
-                <ul class="pricing-features">
-                    <li>✓ Up to 4 roommates</li>
-                    <li>✓ Basic expense tracking</li>
-                    <li>✓ Chore scheduling</li>
-                    <li>✓ Group chat</li>
-                    <li>✓ Mobile app access</li>
-                </ul>
-                <a href="web/index.html" class="btn-pricing">Get Started</a>
-            </div>
-            <div class="pricing-card featured">
-                <div class="pricing-badge">Coming Soon</div>
-                <div class="pricing-header">
-                    <h3 class="pricing-name">Pro</h3>
-                    <div class="pricing-price">
-                        <span class="price-currency">₹</span>
-                        <span class="price-amount">99</span>
-                        <span class="price-period">/month</span>
-                    </div>
-                </div>
-                <ul class="pricing-features">
-                    <li>✓ Unlimited roommates</li>
-                    <li>✓ Advanced expense analytics</li>
-                    <li>✓ Automated reminders</li>
-                    <li>✓ Priority support</li>
-                    <li>✓ Custom rules & policies</li>
-                    <li>✓ Export data</li>
-                </ul>
-                <button class="btn-pricing btn-disabled" disabled>Coming Soon</button>
-            </div>
-            <div class="pricing-card">
-                <div class="pricing-badge-secondary">Coming Soon</div>
-                <div class="pricing-header">
-                    <h3 class="pricing-name">Enterprise</h3>
-                    <div class="pricing-price">
-                        <span class="price-currency">₹</span>
-                        <span class="price-amount">499</span>
-                        <span class="price-period">/month</span>
-                    </div>
-                </div>
-                <ul class="pricing-features">
-                    <li>✓ Multiple properties</li>
-                    <li>✓ Advanced integrations</li>
-                    <li>✓ Custom branding</li>
-                    <li>✓ Dedicated support</li>
-                    <li>✓ API access</li>
-                    <li>✓ SLA guarantee</li>
-                </ul>
-                <button class="btn-pricing btn-disabled" disabled>Coming Soon</button>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta">
-        <div class="cta-content">
-            <h2 class="cta-title">Ready to Transform Your Shared Living?</h2>
-            <p class="cta-description">Join thousands of happy roommates already using RoomOS</p>
-            <div class="cta-buttons">
-                <a href="web/index.html" class="btn-cta-primary">Get Started Free</a>
-                <button onclick="openDownloadModal()" class="btn-cta-secondary">Download App</button>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <div class="footer-logo">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect width="40" height="40" rx="10" fill="url(#footer-logo-gradient)" />
-                        <path d="M12 16L20 12L28 16V24L20 28L12 24V16Z" stroke="white" stroke-width="2" />
-                        <defs>
-                            <linearGradient id="footer-logo-gradient" x1="0" y1="0" x2="40" y2="40">
-                                <stop offset="0%" stop-color="#667eea" />
-                                <stop offset="100%" stop-color="#764ba2" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="brand">
+                    <i class="ph-fill ph-house-line"></i>
                     <span>RoomOS</span>
+                </a>
+                <p>Redefining co-living through intelligent architecture. Built for performance and privacy.</p>
+            </div>
+            <div class="footer-links-grid">
+                <div class="f-col">
+                    <h4>Product</h4>
+                    <a href="#features">Features</a>
+                    <a href="#demo">Showcase</a>
+                    <a href="changelog.html">Updates</a>
                 </div>
-                <p class="footer-description">
-                    Streamline your shared living experience with the most comprehensive
-                    roommate management platform.
-                </p>
-            </div>
-            <div class="footer-section">
-                <h4>Product</h4>
-                <ul>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#demo">Demo</a></li>
-                    <li><a href="#pricing">Pricing</a></li>
-                    <li><a href="web/index.html">Launch App</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Resources</h4>
-                <ul>
-                    <li><a href="docs/API_REFERENCE.md">API Docs</a></li>
-                    <li><a href="docs/DEVELOPER_GUIDE.md">Developer Guide</a></li>
-                    <li><a href="README.md">Documentation</a></li>
-                    <li><a href="#">Support</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Company</h4>
-                <ul>
-                    <li><a href="#">About</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="#">Careers</a></li>
-                    <li><a href="#">Contact</a></li>
-                </ul>
+                <div class="f-col">
+                    <h4>Platform</h4>
+                    <a href="web/index.html">Web Version</a>
+                    <a href="download.html">Android APK</a>
+                    <a href="https://github.com/Sumit7739/RoomOS_V2">Github</a>
+                </div>
             </div>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2025 RoomOS. All rights reserved.</p>
-            <p style="color: var(--text-secondary); font-size: 20px;">Developed by Aditya Singh</p>
-            <div class="footer-links">
-                <a href="#" style="text-decoration: none; color: var(--text-primary);">Privacy Policy</a>
-                <a href="#" style="text-decoration: none; color: var(--text-primary);">Terms of Service</a>
-            </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 RoomOS Project. All rights reserved.</p>
+            <p>Developed by <span>Sumit Srivastava</span></p>
         </div>
     </footer>
 
     <script src="landing.js"></script>
+    <script src="theme.js"></script>
 </body>
 
 </html>

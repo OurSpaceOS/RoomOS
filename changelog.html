@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog | RoomOS Updates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="landing.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        .changelog-page { padding-top: 180px; padding-bottom: 100px; }
+        .timeline { max-width: 800px; margin: 0 auto; }
+        .release { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 40px; margin-bottom: 40px; }
+        .r-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .v-badge { background: var(--primary); color: #fff; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700; font-size: 0.9rem; }
+        .r-date { color: var(--text-muted); font-size: 0.9rem; }
+        .r-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 16px; }
+        .r-desc { color: var(--text-dim); margin-bottom: 32px; }
+        .change-group h4 { color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; margin-bottom: 12px; }
+        .change-list { list-style: none; margin-bottom: 24px; }
+        .change-list li { display: flex; gap: 12px; margin-bottom: 8px; color: var(--text-dim); }
+        .change-list i { color: var(--primary); margin-top: 4px; }
+    </style>
+</head>
+
+<body>
+    <div class="glow-system"><div class="glow-1"></div></div>
+
+    <nav class="main-nav">
+        <div class="container nav-wrap">
+            <a href="index.html" class="brand"><i class="ph-fill ph-house-line"></i><span>RoomOS</span></a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="index.html#demo">Showcase</a>
+                <a href="changelog.html" class="active">Changelog</a>
+                <a href="download.html">Download APK</a>
+                <button id="theme-toggle" class="theme-toggle-btn">
+                    <i class="ph ph-sun"></i>
+                </button>
+                <a href="web/index.html" class="btn-nav">Launch App</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="changelog-page">
+        <div class="container">
+            <div class="section-head" style="text-align: center; margin-bottom: 60px;">
+                <span class="sub">Evolution</span>
+                <h1>Updates & Progress</h1>
+            </div>
+
+            <div class="timeline">
+                <!-- v2.6.0 -->
+                <div class="release">
+                    <div class="r-header">
+                        <span class="v-badge">v2.6.0</span>
+                        <span class="r-date">Nov 25, 2025</span>
+                    </div>
+                    <h2 class="r-title">Stability & Polish</h2>
+                    <p class="r-desc">Critical fixes for core navigation and production stability.</p>
+                    
+                    <div class="change-group">
+                        <h4>Fixes</h4>
+                        <ul class="change-list">
+                            <li><i class="ph ph-check"></i> Fixed async hydration race conditions in storage modules.</li>
+                            <li><i class="ph ph-check"></i> Resolved safer area insets for notched devices.</li>
+                            <li><i class="ph ph-check"></i> Corrected URL opener behavior for external link handoff.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- v2.4.0 -->
+                <div class="release">
+                    <div class="r-header">
+                        <span class="v-badge">v2.4.0</span>
+                        <span class="r-date">Nov 24, 2025</span>
+                    </div>
+                    <h2 class="r-title">HomeSyncOS Rebranding</h2>
+                    <p class="r-desc">Global platform integration and unified naming convention.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-bottom">
+            <p>&copy; 2026 RoomOS Project. Developed by Sumit Srivastava</p>
+        </div>
+    </footer>
+    <script src="theme.js"></script>
+</body>
+
+</html>
