@@ -124,7 +124,7 @@ export function navigate(view, pushToHistory = true) {
             roster: 'Weekly Plan',
             transactions: 'Money',
             crew: 'Crew',
-            rules: 'Rules',
+            rules: 'Attendance',
             profile: 'Profile',
             'expense-analytics': 'Analytics',
             chat: 'Chat',

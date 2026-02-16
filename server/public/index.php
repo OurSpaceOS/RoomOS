@@ -139,6 +139,7 @@ $routes = [
     '/settings/set' => ['SettingsController', 'set'],
     '/settings/delete' => ['SettingsController', 'delete'],
     '/settings/group-get' => ['SettingsController', 'getGroupSetting'],
+    '/settings/group-get-range' => ['SettingsController', 'getGroupSettingRange'],
     '/settings/group-set' => ['SettingsController', 'setGroupSetting'],
     
     // Test

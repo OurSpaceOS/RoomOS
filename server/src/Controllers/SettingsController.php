@@ -229,4 +229,58 @@ class SettingsController {
             'date' => $date
         ]);
     }
+
+    /**
+     * Get group settings for a key across a date range
+     * GET /settings/group-get-range?key=maid_att&from=2026-02-01&to=2026-02-28
+     */
+    public function getGroupSettingRange() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $user = $this->getUserGroup($userId);
+        if (!$user['group_id']) {
+            http_response_code(400);
+            echo json_encode(['error' => 'No group']);
+            return;
+        }
+
+        $key = $_GET['key'] ?? null;
+        $from = $_GET['from'] ?? null;
+        $to = $_GET['to'] ?? null;
+
+        if (!$key || !$from || !$to) {
+            http_response_code(400);
+            echo json_encode(['error' => 'key, from, and to are required']);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("
+            SELECT setting_value, setting_date 
+            FROM group_settings 
+            WHERE group_id = ? AND setting_key = ? AND setting_date >= ? AND setting_date <= ?
+            ORDER BY setting_date ASC
+        ");
+        $stmt->execute([$user['group_id'], $key, $from, $to]);
+        $results = $stmt->fetchAll();
+
+        $entries = [];
+        foreach ($results as $row) {
+            $entries[] = [
+                'date' => $row['setting_date'],
+                'value' => $row['setting_value']
+            ];
+        }
+
+        echo json_encode([
+            'key' => $key,
+            'from' => $from,
+            'to' => $to,
+            'entries' => $entries
+        ]);
+    }
 }

@@ -111,7 +111,9 @@ export async function renderTransactions() {
 
                 // Find the user name by matching ID
                 let userName = 'Unknown User';
+                let otherUserId = null;
                 if (balance.other_user_id) {
+                    otherUserId = balance.other_user_id;
                     const member = members.find(m => m.id === balance.other_user_id);
                     userName = member ? member.name : 'Unknown User';
                 } else if (balance.other_user_name) {
@@ -126,7 +128,9 @@ export async function renderTransactions() {
                 const text = isOwed ? 'owes you' : 'you owe';
 
                 html += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bg-tertiary);">
+                    <div class="balance-person-row" data-other-id="${otherUserId}" data-other-name="${userName}" data-amount="${amount}"
+                         style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--bg-tertiary); cursor: pointer; transition: background 0.15s; border-radius: var(--radius-md); padding-left: 8px; padding-right: 8px;"
+                         onmouseover="this.style.background='var(--bg-elevated)'" onmouseout="this.style.background='none'">
                         <div style="display: flex; align-items: center; gap: 14px;">
                             <div style="width: 42px; height: 42px; border-radius: 50%; background: ${color}20; display: flex; align-items: center; justify-content: center; font-weight: 700; color: ${color}; font-size: 1.1rem;">
                                 ${userName.charAt(0).toUpperCase()}
@@ -136,8 +140,11 @@ export async function renderTransactions() {
                                 <div style="font-size: 0.85rem; color: var(--text-secondary);">${text}</div>
                             </div>
                         </div>
-                        <div style="font-size: 1.3rem; font-weight: 700; color: ${color};">
-                            ${icon} ₹${Math.abs(amount).toFixed(2)}
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="font-size: 1.3rem; font-weight: 700; color: ${color};">
+                                ${icon} ₹${Math.abs(amount).toFixed(2)}
+                            </div>
+                            <i class="ph ph-caret-right" style="color: var(--text-tertiary); font-size: 1rem;"></i>
                         </div>
                     </div>
                 `;
@@ -155,8 +162,17 @@ export async function renderTransactions() {
                 </button>
 
                 <!-- Recent List -->
-                <h3 style="margin-bottom: 20px; font-size: 1.3rem; color: var(--text-primary);">Recent Expenses</h3>
-                <div class="transactions-list">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="margin: 0; font-size: 1.3rem; color: var(--text-primary);">Recent Expenses</h3>
+                    <span id="tx-count" style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 600;"></span>
+                </div>
+                <div class="transactions-list" id="tx-list"></div>
+                <div id="tx-load-more-wrap" style="text-align: center; margin-top: 16px; display: none;">
+                    <button id="tx-load-more" style="padding: 12px 32px; border-radius: var(--radius-full); border: 1.5px solid var(--border-medium); background: var(--bg-card); color: var(--text-primary); font-size: 0.88rem; font-weight: 700; font-family: var(--font-main); cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04); -webkit-tap-highlight-color: transparent;">
+                        Load More
+                    </button>
+                </div>
+            </div>
         `;
 
         // Filter transactions where current user has a share OR paid for it
@@ -201,66 +217,55 @@ export async function renderTransactions() {
                 ? uploadsBaseUrl + member.profile_picture 
                 : null;
         });
-        
-        if (myRelevantTransactions.length === 0) {
-            html += '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses to show.</p>';
-        } else {
-            myRelevantTransactions.forEach(t => {
-                const splitBetween = t.split_between ? JSON.parse(t.split_between) : [];
-                const splitBetweenNames = splitBetween.map(id => {
-                    const member = members.find(m => m.id === id);
-                    return member ? member.name : 'Unknown';
-                }).join(', ');
-                
-                // Find the payer's name, color, and profile picture
-                const payer = members.find(m => m.id === t.user_id);
-                const payerName = payer ? payer.name : 'Unknown';
-                const payerColor = userColors[t.user_id] || '#667eea';
-                const payerProfilePic = userProfilePics[t.user_id];
-                const isPaidByCurrentUser = t.user_id === currentUser.id;
-                
-                // Get payer initials for avatar fallback
-                const payerInitials = payerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-                
-                // Render avatar - use profile picture if available, otherwise initials
-                const avatarContent = payerProfilePic 
-                    ? `<img src="${payerProfilePic}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="${payerName}">`
-                    : payerInitials;
-                
-                html += `
-                    <div class="card transaction-item" 
-                         data-id="${t.id}"
-                         data-description="${t.description}"
-                         data-amount="${t.amount}"
-                         data-payer="${payerName}"
-                         data-split-between='${JSON.stringify(splitBetween)}'
-                         data-split-names="${splitBetweenNames}"
-                         data-date="${t.created_at}"
-                         style="padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-left: 4px solid ${payerColor};"
-                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'"
-                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
-                            <!-- User Avatar Circle -->
-                            <div style="width: 44px; height: 44px; border-radius: 50%; background: ${payerColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; overflow: hidden;">
-                                ${avatarContent}
-                            </div>
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-primary);">${t.description}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by ${isPaidByCurrentUser ? 'You' : payerName}</div>
-                            </div>
+
+        // Helper to render a single transaction card
+        function renderTxCard(t) {
+            const splitBetween = t.split_between ? (typeof t.split_between === 'string' ? JSON.parse(t.split_between) : t.split_between) : [];
+            const splitBetweenNames = splitBetween.map(id => {
+                const member = members.find(m => m.id === id);
+                return member ? member.name : 'Unknown';
+            }).join(', ');
+            
+            const payer = members.find(m => m.id === t.user_id);
+            const payerName = payer ? payer.name : 'Unknown';
+            const payerColor = userColors[t.user_id] || '#667eea';
+            const payerProfilePic = userProfilePics[t.user_id];
+            const isPaidByCurrentUser = t.user_id === currentUser.id;
+            const payerInitials = payerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const avatarContent = payerProfilePic 
+                ? `<img src="${payerProfilePic}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="${payerName}">`
+                : payerInitials;
+            
+            return `
+                <div class="card transaction-item" 
+                     data-id="${t.id}"
+                     data-description="${t.description}"
+                     data-amount="${t.amount}"
+                     data-payer="${payerName}"
+                     data-split-between='${JSON.stringify(splitBetween)}'
+                     data-split-names="${splitBetweenNames}"
+                     data-date="${t.created_at}"
+                     style="padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-left: 4px solid ${payerColor};"
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'"
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                    <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+                        <div style="width: 44px; height: 44px; border-radius: 50%; background: ${payerColor}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.95rem; flex-shrink: 0; overflow: hidden;">
+                            ${avatarContent}
                         </div>
-                        <div style="display: flex; align-items: center; gap: 14px;">
-                            <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${parseFloat(t.amount).toFixed(2)}</div>
-                            ${isPaidByCurrentUser ? `<button class="delete-transaction-btn" data-id="${t.id}" style="background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="event.stopPropagation()">
-                                <i class="ph ph-trash"></i>
-                            </button>` : ''}
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 1.05rem; margin-bottom: 4px; color: var(--text-primary);">${t.description}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary);">Paid by ${isPaidByCurrentUser ? 'You' : payerName}</div>
                         </div>
                     </div>
-                `;
-            });
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="font-weight: 700; color: var(--text-primary); font-size: 1.15rem;">₹${parseFloat(t.amount).toFixed(2)}</div>
+                        ${isPaidByCurrentUser ? `<button class="delete-transaction-btn" data-id="${t.id}" style="background: var(--danger); color: white; border: none; padding: 8px 14px; border-radius: var(--radius-md); cursor: pointer; font-size: 0.9rem; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'" onclick="event.stopPropagation()">
+                            <i class="ph ph-trash"></i>
+                        </button>` : ''}
+                    </div>
+                </div>
+            `;
         }
-
-        html += '</div></div>';
         
         // Add custom delete confirmation modal
         html += `
@@ -297,8 +302,22 @@ export async function renderTransactions() {
                     </div>
                     
                     <div id="expense-detail-content" style="display: flex; flex-direction: column; gap: 20px;">
-                        <!-- Content will be populated dynamically -->
                     </div>
+                </div>
+            </div>
+        `;
+
+        // Add balance breakdown modal
+        html += `
+            <div id="balance-breakdown-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; overflow-y: auto; padding: 20px;">
+                <div style="background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px; max-width: 450px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: slideIn 0.3s ease-out; margin: auto;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                        <h3 id="bb-title" style="margin: 0; font-size: 1.2rem; color: var(--text-primary);">Balance Breakdown</h3>
+                        <button id="close-bb-modal" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background 0.2s;" onmouseover="this.style.background='var(--bg-input)'" onmouseout="this.style.background='none'">
+                            <i class="ph ph-x"></i>
+                        </button>
+                    </div>
+                    <div id="bb-content" style="display: flex; flex-direction: column; gap: 12px;"></div>
                 </div>
             </div>
         `;
@@ -440,6 +459,36 @@ export async function renderTransactions() {
         `;
         
         container.innerHTML = html;
+
+        // ─── PAGINATION: render first 10, then load more on click ───
+        const PAGE_SIZE = 10;
+        let txShown = 0;
+        const txList = document.getElementById('tx-list');
+        const txCount = document.getElementById('tx-count');
+        const loadMoreWrap = document.getElementById('tx-load-more-wrap');
+        const loadMoreBtn = document.getElementById('tx-load-more');
+
+        function showNextPage() {
+            const end = Math.min(txShown + PAGE_SIZE, myRelevantTransactions.length);
+            let chunk = '';
+            for (let i = txShown; i < end; i++) {
+                chunk += renderTxCard(myRelevantTransactions[i]);
+            }
+            txList.insertAdjacentHTML('beforeend', chunk);
+            txShown = end;
+            txCount.textContent = `${txShown} of ${myRelevantTransactions.length}`;
+            loadMoreWrap.style.display = txShown < myRelevantTransactions.length ? 'block' : 'none';
+
+            // Re-attach click & delete handlers for new cards
+            attachTransactionHandlers();
+        }
+
+        if (myRelevantTransactions.length === 0) {
+            txList.innerHTML = '<p style="color: var(--text-secondary); padding: 20px 0; text-align: center;">No expenses to show.</p>';
+        } else {
+            showNextPage();
+        }
+        loadMoreBtn.addEventListener('click', showNextPage);
 
         // Handlers
         const addExpenseModal = document.getElementById('add-expense-modal');
@@ -613,21 +662,12 @@ export async function renderTransactions() {
             }
         });
 
-        // Delete Transaction Handlers with Custom Modal
+        // Delete handler variables (used by attachTransactionHandlers)
         const deleteModal = document.getElementById('delete-modal');
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
         let pendingDeleteId = null;
         let pendingDeleteButton = null;
-
-        // Show modal when delete button is clicked
-        document.querySelectorAll('.delete-transaction-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                pendingDeleteId = e.currentTarget.getAttribute('data-id');
-                pendingDeleteButton = e.currentTarget;
-                deleteModal.style.display = 'flex';
-            });
-        });
 
         // Cancel deletion
         cancelDeleteBtn.addEventListener('click', () => {
@@ -671,91 +711,186 @@ export async function renderTransactions() {
             }
         });
 
-        // Expense Detail Modal Handlers
+        // ─── Reusable handler attachment (called after each page load) ───
         const expenseDetailModal = document.getElementById('expense-detail-modal');
         const closeDetailBtn = document.getElementById('close-detail-modal');
         const expenseDetailContent = document.getElementById('expense-detail-content');
 
-        // Show detail modal when clicking on a transaction
-        document.querySelectorAll('.transaction-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const description = item.getAttribute('data-description');
-                const amount = parseFloat(item.getAttribute('data-amount'));
-                const payer = item.getAttribute('data-payer');
-                const splitBetween = JSON.parse(item.getAttribute('data-split-between'));
-                const splitNames = item.getAttribute('data-split-names');
-                const date = new Date(item.getAttribute('data-date'));
-                const formattedDate = date.toLocaleDateString('en-US', { 
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: 'Asia/Kolkata'
+        function attachTransactionHandlers() {
+            // Attach click to ALL transaction items (idempotent via data-bound flag)
+            document.querySelectorAll('.transaction-item:not([data-bound])').forEach(item => {
+                item.setAttribute('data-bound', '1');
+                item.addEventListener('click', () => {
+                    const description = item.getAttribute('data-description');
+                    const amount = parseFloat(item.getAttribute('data-amount'));
+                    const payer = item.getAttribute('data-payer');
+                    const splitBetween = JSON.parse(item.getAttribute('data-split-between'));
+                    const date = new Date(item.getAttribute('data-date'));
+                    const formattedDate = date.toLocaleDateString('en-US', { 
+                        day: 'numeric', month: 'long', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata'
+                    });
+                    const splitAmount = splitBetween.length > 0 ? (amount / splitBetween.length) : amount;
+                    let splitDetails = '';
+                    if (splitBetween.length === 0) {
+                        splitDetails = '<div style="color: var(--text-secondary); font-style: italic;">No split info</div>';
+                    } else {
+                        splitDetails = splitBetween.map(id => {
+                            const member = members.find(m => m.id === id);
+                            const memberName = member ? member.name : 'Unknown';
+                            return `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-input); border-radius: var(--radius-sm);">
+                                    <div style="font-weight: 500; color: var(--text-primary);">${memberName}</div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">₹${splitAmount.toFixed(2)}</div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                    expenseDetailContent.innerHTML = `
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: var(--radius-md); color: white;">
+                            <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px;">${description}</div>
+                            <div style="font-size: 2.2rem; font-weight: 700;">₹${amount.toFixed(2)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">PAID BY</div>
+                            <div style="padding: 12px 16px; background: var(--bg-input); border-radius: var(--radius-md);">
+                                <div style="font-weight: 600; color: var(--text-primary); font-size: 1.05rem;">${payer}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">SPLIT BETWEEN</div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">${splitDetails}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">DATE & TIME</div>
+                            <div style="padding: 12px 16px; background: var(--bg-input); border-radius: var(--radius-md);">
+                                <div style="color: var(--text-primary);">${formattedDate}</div>
+                            </div>
+                        </div>
+                    `;
+                    expenseDetailModal.style.display = 'flex';
+                });
+            });
+
+            // Attach delete handlers for new cards
+            document.querySelectorAll('.delete-transaction-btn:not([data-bound])').forEach(btn => {
+                btn.setAttribute('data-bound', '1');
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    pendingDeleteId = btn.getAttribute('data-id');
+                    pendingDeleteButton = btn;
+                    deleteModal.style.display = 'flex';
+                });
+            });
+        }
+
+        // Close detail modal
+        closeDetailBtn.addEventListener('click', () => { expenseDetailModal.style.display = 'none'; });
+        expenseDetailModal.addEventListener('click', (e) => {
+            if (e.target === expenseDetailModal) expenseDetailModal.style.display = 'none';
+        });
+
+        // ─── BALANCE BREAKDOWN MODAL ───
+        const bbModal = document.getElementById('balance-breakdown-modal');
+        const bbTitle = document.getElementById('bb-title');
+        const bbContent = document.getElementById('bb-content');
+        const closeBbBtn = document.getElementById('close-bb-modal');
+
+        document.querySelectorAll('.balance-person-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const otherId = parseInt(row.getAttribute('data-other-id'));
+                const otherName = row.getAttribute('data-other-name');
+                const netAmount = parseFloat(row.getAttribute('data-amount'));
+                const isOwed = netAmount > 0; // positive = they owe me
+
+                bbTitle.textContent = otherName;
+
+                // Find all transactions between me and this person
+                const relevantTxns = transactions.filter(t => {
+                    let sb = [];
+                    try { sb = typeof t.split_between === 'string' ? JSON.parse(t.split_between) : (t.split_between || []); } catch(e) {}
+                    const sbNums = sb.map(id => parseInt(id));
+                    const meId = parseInt(currentUser.id);
+                    const payerId = parseInt(t.user_id);
+                    // Transaction involves both me and the other person
+                    const meInvolved = payerId === meId || sbNums.includes(meId);
+                    const otherInvolved = payerId === otherId || sbNums.includes(otherId);
+                    return meInvolved && otherInvolved;
                 });
 
-                // Calculate split amount
-                const splitAmount = splitBetween.length > 0 ? (amount / splitBetween.length) : amount;
+                // Build breakdown HTML
+                let breakdownHtml = '';
 
-                // Build split details
-                let splitDetails = '';
-                if (splitBetween.length === 0) {
-                    splitDetails = '<div style="color: var(--text-secondary); font-style: italic;">No split information available</div>';
-                } else {
-                    splitDetails = splitBetween.map(id => {
-                        const member = members.find(m => m.id === id);
-                        const memberName = member ? member.name : 'Unknown';
-                        return `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: var(--bg-input); border-radius: var(--radius-sm);">
-                                <div style="font-weight: 500; color: var(--text-primary);">${memberName}</div>
-                                <div style="font-weight: 600; color: var(--text-primary);">₹${splitAmount.toFixed(2)}</div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-
-                expenseDetailContent.innerHTML = `
-                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: var(--radius-md); color: white;">
-                        <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 8px;">${description}</div>
-                        <div style="font-size: 2.2rem; font-weight: 700;">₹${amount.toFixed(2)}</div>
-                    </div>
-
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">PAID BY</div>
-                        <div style="padding: 12px 16px; background: var(--bg-input); border-radius: var(--radius-md);">
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1.05rem;">${payer}</div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">SPLIT BETWEEN</div>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                            ${splitDetails}
-                        </div>
-                    </div>
-
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">DATE & TIME</div>
-                        <div style="padding: 12px 16px; background: var(--bg-input); border-radius: var(--radius-md);">
-                            <div style="color: var(--text-primary);">${formattedDate}</div>
-                        </div>
+                // Summary header
+                const summaryColor = isOwed ? 'var(--success)' : 'var(--danger)';
+                const summaryText = isOwed ? `${otherName} owes you` : `You owe ${otherName}`;
+                breakdownHtml += `
+                    <div style="background: ${summaryColor}15; border: 1.5px solid ${summaryColor}30; border-radius: var(--radius-lg); padding: 16px; text-align: center; margin-bottom: 4px;">
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">${summaryText}</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: ${summaryColor};">₹${Math.abs(netAmount).toFixed(0)}</div>
                     </div>
                 `;
 
-                expenseDetailModal.style.display = 'flex';
+                if (relevantTxns.length === 0) {
+                    breakdownHtml += '<p style="text-align:center; color: var(--text-tertiary); padding: 12px;">No transaction history found</p>';
+                } else {
+                    breakdownHtml += `<div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 4px;">Transactions (${relevantTxns.length})</div>`;
+                    breakdownHtml += '<div style="display: flex; flex-direction: column; gap: 6px; max-height: 350px; overflow-y: auto;">';
+
+                    relevantTxns.forEach(t => {
+                        let sb = [];
+                        try { sb = typeof t.split_between === 'string' ? JSON.parse(t.split_between) : (t.split_between || []); } catch(e) {}
+                        const amt = parseFloat(t.amount);
+                        const splitCount = sb.length || 1;
+                        const shareEach = amt / splitCount;
+                        const payerId = parseInt(t.user_id);
+                        const meId = parseInt(currentUser.id);
+
+                        // Calculate the net effect of THIS transaction between me and the other person
+                        let effect = 0; // positive = they owe me from this txn
+                        if (payerId === meId) {
+                            // I paid — other person's share is what they owe me
+                            if (sb.map(id => parseInt(id)).includes(otherId)) {
+                                effect = shareEach;
+                            }
+                        } else if (payerId === otherId) {
+                            // They paid — my share is what I owe them
+                            if (sb.map(id => parseInt(id)).includes(meId)) {
+                                effect = -shareEach;
+                            }
+                        }
+
+                        if (effect === 0) return;
+
+                        const effColor = effect > 0 ? 'var(--success)' : 'var(--danger)';
+                        const effLabel = effect > 0 ? `+₹${effect.toFixed(0)}` : `-₹${Math.abs(effect).toFixed(0)}`;
+                        const payer = members.find(m => m.id === t.user_id);
+                        const payerName = payer ? payer.name : 'Unknown';
+                        const d = new Date(t.created_at);
+                        const dateStr = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
+
+                        breakdownHtml += `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-elevated); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.description}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 2px;">${dateStr} · Paid by ${payerId === meId ? 'You' : payerName} · ₹${amt.toFixed(0)} ÷ ${splitCount}</div>
+                                </div>
+                                <div style="font-weight: 700; font-size: 0.95rem; color: ${effColor}; white-space: nowrap; margin-left: 12px;">${effLabel}</div>
+                            </div>
+                        `;
+                    });
+
+                    breakdownHtml += '</div>';
+                }
+
+                bbContent.innerHTML = breakdownHtml;
+                bbModal.style.display = 'flex';
             });
         });
 
-        // Close detail modal
-        closeDetailBtn.addEventListener('click', () => {
-            expenseDetailModal.style.display = 'none';
-        });
-
-        // Close when clicking outside
-        expenseDetailModal.addEventListener('click', (e) => {
-            if (e.target === expenseDetailModal) {
-                expenseDetailModal.style.display = 'none';
-            }
+        closeBbBtn.addEventListener('click', () => { bbModal.style.display = 'none'; });
+        bbModal.addEventListener('click', (e) => {
+            if (e.target === bbModal) bbModal.style.display = 'none';
         });
 
         // Recalculate Balance Handler
