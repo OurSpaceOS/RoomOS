@@ -408,8 +408,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 8px;
+  justify-content: center;
+  /* Center content vertically */
+  gap: 0;
+  /* Remove gap since text is gone */
+  padding: 12px 8px;
+  /* Slightly more padding */
   background: transparent;
   border: none;
   border-radius: var(--radius-md);
@@ -420,6 +424,11 @@ body {
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
+}
+
+.nav-item span {
+  display: none !important;
+  /* Hide text label */
 }
 
 .nav-item::before {
@@ -436,7 +445,8 @@ body {
 .nav-item::after {
   content: "";
   position: absolute;
-  bottom: 4px;
+  bottom: 6px;
+  /* Adjusted position */
   width: 4px;
   height: 4px;
   background: var(--accent-primary);
@@ -465,7 +475,8 @@ body {
 }
 
 .nav-icon {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
+  /* Increased size (was 1.5rem) */
   transition: transform var(--transition-base);
   position: relative;
   z-index: 1;
