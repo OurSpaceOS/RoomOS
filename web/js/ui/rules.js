@@ -226,7 +226,7 @@ export async function preloadForDashboard() {
 // ─── Render ───
 export function renderRules() {
     const container = document.getElementById('view-container');
-    container.innerHTML = `<div class="fade-in" style="padding-bottom:90px;"><div id="matt-root"></div></div>`;
+    container.innerHTML = `<div class="fade-in" style="padding-bottom:120px;"><div id="matt-root"></div></div>`;
     state.cycleOffset = 0;
     fetchCycle();
 }
@@ -308,9 +308,9 @@ function render() {
         `;
     }
 
-    // Build day rows (reverse order — newest first, skip today)
+    // Build day rows (ascending order — oldest first, skip today)
     let rows = '';
-    for (let i = CYCLE_DAYS - 1; i >= 0; i--) {
+    for (let i = 0; i < CYCLE_DAYS; i++) {
         const d = cycleDays[i];
         const dk = fmtDate(d);
         if (dk === todayStr && todayInCycle) continue;
