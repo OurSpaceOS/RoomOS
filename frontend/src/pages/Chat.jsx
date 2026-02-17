@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import api, { API_BASE } from "../api";
 import useAuthStore from "../store/auth";
+import useSync from "../hooks/useSync";
 
 // ─── Helpers ───
 const getInitials = (name) =>
@@ -159,6 +160,7 @@ const Chat = () => {
   const mode = theme.palette.mode;
   const { user } = useAuthStore();
   const myId = user?.id;
+  const { refresh: refreshSync } = useSync();
 
   const [view, setView] = useState(VIEW.GROUP);
   const [dmUserId, setDmUserId] = useState(null);
@@ -169,7 +171,9 @@ const Chat = () => {
   const { data: convData, refetch: refetchConversations } = useQuery({
     queryKey: ["chatConversations"],
     queryFn: () => api.get("/chat/conversations"),
-    refetchInterval: 15000,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const conversations = convData?.conversations || [];
@@ -292,18 +296,7 @@ const Chat = () => {
         {/* Header actions */}
         <Stack direction="row" spacing={1} alignItems="center">
           {/* Manual Refresh */}
-          <RefreshButton
-            theme={theme}
-            onRefresh={() => {
-              queryClient.invalidateQueries(
-                view === VIEW.GROUP
-                  ? ["chatGroup"]
-                  : view === VIEW.DM
-                    ? ["chatDm", dmUserId]
-                    : ["chatConversations"],
-              );
-            }}
-          />
+          <RefreshButton theme={theme} onRefresh={refreshSync} />
 
           {/* Conversations toggle */}
           {view !== VIEW.CONVERSATIONS && (
@@ -674,7 +667,9 @@ const ChatThread = ({
   const { data: msgData, isLoading } = useQuery({
     queryKey,
     queryFn: () => api.get(endpoint),
-    refetchInterval: 15000,
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const messages = msgData?.messages || [];

@@ -61,7 +61,6 @@ import { alpha } from "@mui/material/styles";
 // Static mapper to avoid serializing React components
 const ICON_MAP = {
   dock_show_home: { label: "Home", icon: House },
-  dock_show_roster: { label: "Roster", icon: CalendarBlank },
   dock_show_crew: { label: "Crew", icon: UsersThree },
   dock_show_wallet: { label: "Wallet", icon: Wallet },
   dock_show_attendance: { label: "Maid Attendance", icon: CheckCircle },
@@ -163,6 +162,9 @@ const Settings = () => {
         ].includes(id),
       }));
     }
+
+    // Filter out any IDs not present in ICON_MAP (e.g., removed features like Roster)
+    initialConfig = initialConfig.filter((item) => ICON_MAP[item.id]);
 
     setLocalDockConfig(initialConfig);
   }, [settings]);
@@ -374,32 +376,6 @@ const Settings = () => {
             </Box>
           </Card>
 
-          <Card
-            sx={{
-              p: 2,
-              mt: 1.5,
-              borderRadius: "24px",
-              boxShadow: "0 8px 30px rgba(0,0,0,0.04)",
-              border: `1px solid ${theme.palette.divider}`,
-              cursor: "pointer",
-            }}
-          >
-            <Box onClick={() => navigate("/settings/maid-attendance")}>
-              <SettingItem
-                icon={Broom}
-                title="Maid Attendance"
-                subtitle="Track shifts, split costs & manage members"
-                action={
-                  <CaretRight
-                    weight="bold"
-                    size={18}
-                    style={{ opacity: 0.5 }}
-                  />
-                }
-              />
-            </Box>
-          </Card>
-
           {/* Account Section */}
           <Typography
             variant="overline"
@@ -523,11 +499,7 @@ const Settings = () => {
             <SettingItem
               icon={Broom}
               title="Maid Service"
-              subtitle={
-                hasMaid
-                  ? "Service is active • Visuals enabled"
-                  : "Service is inactive • Visuals hidden"
-              }
+              subtitle={hasMaid ? "Enabled" : "Disabled"}
               action={
                 <Switch
                   size="small"
@@ -571,8 +543,7 @@ const Settings = () => {
                   display: "block",
                 }}
               >
-                Toggling this will automatically show or hide the "Maid
-                Attendance" shortcut in your bottom dock configuration.
+                Shows or hides maid attendance in your bottom dock.
               </Typography>
             </Box>
           </Card>

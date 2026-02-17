@@ -50,6 +50,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { alpha } from "@mui/material/styles";
 import { toast } from "sonner";
 import api from "../api";
+import useSync from "../hooks/useSync";
 
 // Category icons mapping
 const CATEGORY_MAP = {
@@ -76,6 +77,7 @@ const AutoDebits = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const mode = theme.palette.mode;
+  const { refresh: refreshSync } = useSync();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDebit, setEditingDebit] = useState(null);
@@ -93,6 +95,9 @@ const AutoDebits = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["autodebits"],
     queryFn: () => api.get("/autodebits/list"),
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   // Create mutation
@@ -246,23 +251,42 @@ const AutoDebits = () => {
             </Typography>
           </Box>
         </Stack>
-        <IconButton
-          onClick={() => setIsModalOpen(true)}
-          sx={{
-            bgcolor: "primary.main",
-            color: mode === "light" ? "white" : "#041e49",
-            width: 44,
-            height: 44,
-            boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
-            "&:hover": {
-              bgcolor: "primary.dark",
-              transform: "scale(1.05)",
-            },
-            transition: "all 0.2s ease",
-          }}
-        >
-          <Plus size={22} weight="bold" />
-        </IconButton>
+        <Stack direction="row" spacing={1}>
+          <IconButton
+            onClick={() =>
+              refreshSync().then(() => toast.success("Auto-debits updated"))
+            }
+            sx={{
+              bgcolor: "background.paper",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              width: 44,
+              height: 44,
+            }}
+          >
+            <ArrowsClockwise
+              size={20}
+              weight="bold"
+              color={theme.palette.primary.main}
+            />
+          </IconButton>
+          <IconButton
+            onClick={() => setIsModalOpen(true)}
+            sx={{
+              bgcolor: "primary.main",
+              color: mode === "light" ? "white" : "#041e49",
+              width: 44,
+              height: 44,
+              boxShadow: `0 8px 24px ${alpha(theme.palette.primary.main, 0.3)}`,
+              "&:hover": {
+                bgcolor: "primary.dark",
+                transform: "scale(1.05)",
+              },
+              transition: "all 0.2s ease",
+            }}
+          >
+            <Plus size={22} weight="bold" />
+          </IconButton>
+        </Stack>
       </Box>
 
       <Container maxWidth="sm">
@@ -276,10 +300,6 @@ const AutoDebits = () => {
               p: 3,
               borderRadius: "28px",
               mb: 3,
-              bgcolor:
-                mode === "light"
-                  ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                  : "surface.main",
               background:
                 mode === "light"
                   ? "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)"

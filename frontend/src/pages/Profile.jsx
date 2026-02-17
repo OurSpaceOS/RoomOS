@@ -38,6 +38,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { API_BASE } from "../api";
 import useAuthStore from "../store/auth";
 import useThemeStore from "../store/themeStore";
+import useSync from "../hooks/useSync";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -54,32 +55,43 @@ const Profile = () => {
   const queryClient = useQueryClient();
   const { user: authUser, group: authGroup } = useAuthStore();
   const { mode } = useThemeStore();
+  const { refresh: refreshSync } = useSync();
 
   // Queries for fresh data
   const { data: userData } = useQuery({
     queryKey: ["me"],
     queryFn: () => api.get("/auth/me"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: picData } = useQuery({
     queryKey: ["profile-pic"],
     queryFn: () => api.get("/auth/get-profile-picture"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: groupData } = useQuery({
     queryKey: ["group-details"],
     queryFn: () => api.get("/group/details"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: pendingData } = useQuery({
     queryKey: ["pending-requests"],
     queryFn: () => api.get("/group/pending-requests"),
     enabled: userData?.user?.role === "admin",
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: membersData } = useQuery({
     queryKey: ["members"],
     queryFn: () => api.get("/group/members"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   // Mutations
@@ -108,17 +120,10 @@ const Profile = () => {
   });
 
   const handleRefresh = async () => {
-    const refreshPromise = Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["me"] }),
-      queryClient.invalidateQueries({ queryKey: ["group-details"] }),
-      queryClient.invalidateQueries({ queryKey: ["pending-requests"] }),
-      queryClient.invalidateQueries({ queryKey: ["members"] }),
-    ]);
-
-    toast.promise(refreshPromise, {
-      loading: "Refreshing profile data...",
+    toast.promise(refreshSync(), {
+      loading: "Checking for updates...",
       success: "Profile updated",
-      error: "Refresh failed",
+      error: "Update check failed",
     });
   };
 
@@ -460,34 +465,9 @@ const Profile = () => {
               }
               subtext="Cluster Init"
             />
-            {isAdmin && (
-              <Button
-                fullWidth
-                variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  const promise = api.post("/schedule/generate-plan");
-                  toast.promise(promise, {
-                    loading: "Syncing cluster roster...",
-                    success: "Weekly Roster Synchronized",
-                    error: "Failed to sync roster",
-                  });
-                }}
-                sx={{
-                  mt: 2.5,
-                  py: 2,
-                  borderRadius: "16px",
-                  fontWeight: 800,
-                  textTransform: "none",
-                  borderStyle: "dashed",
-                  borderWidth: "2px",
-                  fontSize: "0.95rem",
-                  "&:hover": { borderWidth: "2px" },
-                }}
-              >
-                Re-sync Weekly Roster
-              </Button>
-            )}
+            {/* {isAdmin && (
+              <Button moved to settings or deprecated />
+            )} */}
           </Card>
 
           {/* Logout */}

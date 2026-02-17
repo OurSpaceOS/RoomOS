@@ -68,6 +68,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../api";
 import useAuthStore from "../store/auth";
 import useThemeStore from "../store/themeStore";
+import useSync from "../hooks/useSync";
 
 const CATEGORIES = [
   { id: "food", label: "Food", icon: Hamburger, color: "#f59e0b" },
@@ -107,6 +108,7 @@ const Wallet = () => {
   const { user, setUser } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const { refresh: refreshSync } = useSync();
 
   // Pagination state
   const [visibleCount, setVisibleCount] = useState(15);
@@ -147,16 +149,22 @@ const Wallet = () => {
   const { data: transData, isLoading: transLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => api.get("/transactions/list").then((res) => res || {}),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: membersData, isLoading: membersLoading } = useQuery({
     queryKey: ["members"],
     queryFn: () => api.get("/group/members").then((res) => res || {}),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: budgetStats } = useQuery({
     queryKey: ["budget-stats"],
     queryFn: () => api.get("/budget/stats"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   // Process any due auto-debits on wallet load
@@ -164,7 +172,9 @@ const Wallet = () => {
     queryKey: ["autodebits-process"],
     queryFn: () => api.post("/autodebits/process"),
     staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Mutations
@@ -393,7 +403,7 @@ const Wallet = () => {
             p: 2,
             borderRadius: "24px",
             mb: 2,
-            bgcolor: "surface.main",
+            bgcolor: mode === "light" ? "background.paper" : "background.paper",
             boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
             border: "none",
             background:
@@ -542,13 +552,17 @@ const Wallet = () => {
                 p: 0,
                 borderRadius: "28px",
                 mb: 3,
-                bgcolor: "primary.container",
-                color: "primary.onContainer",
+                bgcolor:
+                  mode === "light" ? "primary.container" : "background.paper",
+                color:
+                  mode === "light" ? "primary.onContainer" : "text.primary",
                 overflow: "hidden",
                 border:
                   mode === "light"
                     ? "1px solid rgba(0,0,0,0.04)"
-                    : `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    : `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                boxShadow:
+                  mode === "light" ? "none" : "0 8px 32px rgba(0,0,0,0.4)",
               }}
             >
               {/* Top section — Income headline */}
@@ -1970,6 +1984,13 @@ const Wallet = () => {
       >
         <DialogTitle sx={{ fontWeight: 900, px: 3, pt: 3 }}>
           Add Income Source
+          <IconButton
+            onClick={() => setIsIncomeModalOpen(false)}
+            sx={{ position: "absolute", right: 12, top: 12 }}
+            size="small"
+          >
+            <X size={18} weight="bold" />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ px: 3 }}>
           <Stack spacing={3} sx={{ mt: 1 }}>

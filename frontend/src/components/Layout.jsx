@@ -46,13 +46,6 @@ const Layout = ({ children }) => {
         label: "Home",
       },
       {
-        id: "roster",
-        path: "/roster",
-        icon: CalendarBlank,
-        configKey: "dock_show_roster",
-        label: "Roster",
-      },
-      {
         id: "crew",
         path: "/crew",
         icon: UsersThree,

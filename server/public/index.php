@@ -176,6 +176,9 @@ $routes = [
 
     // Test
     '/test' => ['TestController', 'index'],
+
+    // Sync
+    '/sync/status' => ['SyncController', 'checkStatus'],
 ];
 
 if (array_key_exists($uri, $routes)) {

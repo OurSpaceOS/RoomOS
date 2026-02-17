@@ -80,7 +80,18 @@ function App() {
 
   return (
     <>
-      <Toaster richColors position="top-center" duration={3000} />
+      <Toaster
+        richColors
+        position="top-center"
+        closeButton
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: "var(--paper-overlay)",
+            backdropFilter: "blur(10px)",
+          },
+        }}
+      />
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Login />} />
@@ -103,10 +114,6 @@ function App() {
               <Layout>
                 <Routes>
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route
-                    path="/roster"
-                    element={<Placeholder title="Roster" />}
-                  />
                   <Route path="/crew" element={<Crew />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/chat" element={<Chat />} />

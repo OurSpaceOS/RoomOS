@@ -35,6 +35,7 @@ import {
   CaretDown,
   CaretUp,
   UserMinus,
+  ArrowsClockwise,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,6 +43,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import api from "../api";
 import useAuthStore from "../store/auth";
+import useSync from "../hooks/useSync";
 
 // ─── Helpers ───
 const MONTHS = [
@@ -100,6 +102,7 @@ const MaidAttendance = () => {
   const queryClient = useQueryClient();
   const mode = theme.palette.mode;
   const { user } = useAuthStore();
+  const { refresh: refreshSync } = useSync();
 
   const [cycleOffset, setCycleOffset] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
@@ -114,11 +117,15 @@ const MaidAttendance = () => {
   const { data: membersData } = useQuery({
     queryKey: ["group-members"],
     queryFn: () => api.get("/group/members"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: configData, isLoading: configLoading } = useQuery({
     queryKey: ["maidConfig"],
     queryFn: () => api.get("/settings/group-get?key=maid_config"),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const config = useMemo(() => {
@@ -164,6 +171,8 @@ const MaidAttendance = () => {
         `/settings/group-get-range?key=maid_att&from=${fmtDate(cycleDates.start)}&to=${fmtDate(cycleDates.end)}`,
       ),
     enabled: !!cycleDates,
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const attendance = useMemo(() => {
@@ -439,24 +448,41 @@ const MaidAttendance = () => {
             <Typography
               variant="caption"
               sx={{ color: "text.secondary", fontWeight: 600 }}
-            >
-              Track shifts & split costs
-            </Typography>
+            ></Typography>
           </Box>
         </Stack>
-        {config && (
+        <Stack direction="row" spacing={1}>
           <IconButton
-            onClick={openSetup}
+            onClick={() =>
+              refreshSync().then(() => toast.success("Attendance updated"))
+            }
             sx={{
-              bgcolor: alpha(theme.palette.primary.main, 0.08),
-              color: "primary.main",
+              bgcolor: "background.paper",
+              border: `1px solid ${theme.palette.divider}`,
               width: 44,
               height: 44,
             }}
           >
-            <Gear size={20} weight="bold" />
+            <ArrowsClockwise
+              size={20}
+              weight="bold"
+              color={theme.palette.primary.main}
+            />
           </IconButton>
-        )}
+          {config && (
+            <IconButton
+              onClick={openSetup}
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                color: "primary.main",
+                width: 44,
+                height: 44,
+              }}
+            >
+              <Gear size={20} weight="bold" />
+            </IconButton>
+          )}
+        </Stack>
       </Box>
 
       <Container maxWidth="sm">

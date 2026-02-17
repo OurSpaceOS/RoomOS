@@ -18,8 +18,6 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  DiceFive,
-  CalendarCheck,
   Sun,
   Moon,
   Clock,
@@ -29,8 +27,6 @@ import {
   Bell,
   CheckCircle,
   User,
-  CookingPot,
-  Sparkle,
   Plus,
   Wallet,
   ChartPieSlice,
@@ -47,6 +43,7 @@ import useSettingsStore from "../store/settingsStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import useSync from "../hooks/useSync";
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -59,8 +56,7 @@ const Dashboard = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
   const [activeSessionIdx, setActiveSessionIdx] = useState(0);
   const [stackState, setStackState] = useState(0); // 0: collapsed, 1: peeking, 2: expanded
-
-  const isMaidPresent = hasMaid();
+  const { refresh: refreshSync } = useSync();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -106,43 +102,38 @@ const Dashboard = () => {
   const isMorning = currentHour < 16;
 
   // Queries
-  const { data: rosterData, isLoading: rosterLoading } = useQuery({
-    queryKey: ["roster"],
-    queryFn: () => api.get("/roster/week").then((res) => res || {}),
-    enabled: !isMaidPresent,
-  });
-
-  const { data: tasksData, isLoading: tasksLoading } = useQuery({
-    queryKey: ["tasks"],
-    queryFn: () => api.get("/tasks/today").then((res) => res || {}),
-    enabled: !isMaidPresent,
-  });
 
   const { data: transData, isLoading: transLoading } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => api.get("/transactions/list").then((res) => res || {}),
-    enabled: isMaidPresent,
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: budgetStats } = useQuery({
     queryKey: ["budget-stats"],
     queryFn: () => api.get("/budget/stats"),
-    enabled: isMaidPresent,
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   // Process any due auto-debits on dashboard load (runs once per session)
   useQuery({
     queryKey: ["autodebits-process"],
     queryFn: () => api.post("/autodebits/process"),
-    enabled: isMaidPresent,
-    staleTime: Infinity,
+    staleTime: Infinity, // Never expire
+    gcTime: Infinity, // Never garbage collect
     refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const { data: maidConfig } = useQuery({
     queryKey: ["maidConfig"],
     queryFn: () =>
       api.get("/settings/group-get?key=maid_config").then((res) => res || {}),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const getMaidSummaryParams = () => {
@@ -178,50 +169,27 @@ const Dashboard = () => {
         )
         .then((res) => res || {}),
     enabled: !!maidParams,
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
 
   const { data: notifData } = useQuery({
     queryKey: ["notifications-unread"],
     queryFn: () => api.get("/notifications").then((res) => res || {}),
-    refetchInterval: 30000,
+    staleTime: Infinity, // Let sync handle updates
+    refetchOnMount: false,
   });
 
   const { data: scheduleData } = useQuery({
     queryKey: ["schedule-all"],
     queryFn: () => api.get("/schedule/get-all").then((res) => res || {}),
+    staleTime: Infinity,
+    refetchOnMount: false,
   });
   const unreadCount =
     notifData?.notifications?.filter((n) => !n.is_read).length || 0;
 
   // ... (rest of logic remains same, just updating UI)
-  const getActiveTeam = () => {
-    if (!rosterData?.roster) return { team: [], passenger: "..." };
-    const dayMap = {
-      Monday: 0,
-      Tuesday: 1,
-      Wednesday: 2,
-      Thursday: 3,
-      Friday: 4,
-      Saturday: 5,
-      Sunday: 6,
-    };
-    const currentDayName = dayName.trim();
-    const dayIndex = dayMap[currentDayName];
-    const dayData = rosterData.roster.find((d) => d.day_index === dayIndex);
-    if (!dayData) return { team: [], passenger: "..." };
-    const morningTeam = JSON.parse(dayData.morning || "[]").map((x) =>
-      typeof x === "string" ? x : x.n,
-    );
-    const nightTeam = JSON.parse(dayData.night || "[]").map((x) =>
-      typeof x === "string" ? x : x.n,
-    );
-    return {
-      team: isMorning ? morningTeam : nightTeam,
-      passenger: isMorning ? dayData.passenger_m : dayData.passenger_n,
-    };
-  };
-
-  const { team, passenger } = getActiveTeam();
 
   const maidStats = React.useMemo(() => {
     if (!maidAttData?.entries || !maidParams) return null;
@@ -371,10 +339,7 @@ const Dashboard = () => {
     else currentSession.status = "Past";
   }
 
-  if (
-    (!isMaidPresent && (rosterLoading || tasksLoading)) ||
-    (isMaidPresent && transLoading)
-  ) {
+  if (transLoading) {
     return (
       <Box
         sx={{
@@ -404,13 +369,27 @@ const Dashboard = () => {
     const now = Date.now();
     if (now - lastRefreshTime < 15000) {
       const remaining = Math.ceil((15000 - (now - lastRefreshTime)) / 1000);
-      toast.error(`Please wait ${remaining}s to refresh again`);
+      toast.error(`Please wait ${remaining}s to refresh again`, {
+        id: "refresh-limit",
+        duration: 2000,
+      });
       return;
     }
 
-    setLastRefreshTime(now);
-    queryClient.invalidateQueries();
-    toast.success("Dashboard updated");
+    // setLastRefreshTime(now); // Let user spam refresh if they want, sync is cheap
+    refreshSync()
+      .then(() => {
+        toast.success("Dashboard updated", {
+          id: "dashboard-refresh",
+          duration: 2000,
+        });
+      })
+      .catch(() => {
+        toast.error("Failed to refresh", {
+          id: "dashboard-refresh-err",
+          duration: 2000,
+        });
+      });
   };
 
   return (
@@ -800,8 +779,8 @@ const Dashboard = () => {
           </Box>
         )}
 
-        {/* Animated Swipe Hint */}
-        {stackState === 0 && (
+        {/* Animated Swipe Hint - Only show if schedule exists */}
+        {stackState === 0 && todaySessions.length > 0 && (
           <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             <motion.div
               animate={{ y: [0, 8, 0] }}
@@ -822,631 +801,435 @@ const Dashboard = () => {
           </Box>
         )}
 
-        {!isMaidPresent ? (
-          /* CHORE MODE: M3 Redesign */
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Card
-              variant="outlined"
-              sx={{
-                borderRadius: "28px",
-                bgcolor:
-                  mode === "light"
-                    ? isMorning
-                      ? "#FFF4E5"
-                      : "#E8EAF6"
-                    : isMorning
-                      ? "rgba(255, 183, 77, 0.08)"
-                      : "rgba(121, 134, 203, 0.08)",
-                border:
-                  mode === "light"
-                    ? "none"
-                    : `1px solid ${theme.palette.divider}`,
-                mb: 3,
-                overflow: "hidden",
-              }}
-            >
-              <Box sx={{ p: 4 }}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  sx={{ mb: 2 }}
-                >
-                  <Chip
-                    label={isMorning ? "Morning Shift" : "Night Shift"}
-                    sx={{
-                      bgcolor:
-                        mode === "light"
-                          ? isMorning
-                            ? "#FFD180"
-                            : "#C5CAE9"
-                          : isMorning
-                            ? "#E65100"
-                            : "#283593",
-                      color:
-                        mode === "light"
-                          ? isMorning
-                            ? "#795548"
-                            : "#3F51B5"
-                          : "#ffffff",
-                      fontWeight: 700,
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 600, color: "text.secondary" }}
-                  >
-                    {timeStr}
-                  </Typography>
-                </Stack>
-                <Typography
-                  variant="h3"
-                  sx={{ fontWeight: 400, mb: 1, color: "text.primary" }}
-                >
-                  {team.length ? team.join(" & ") : "Unassigned"}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  sx={{ color: "text.secondary", fontWeight: 500 }}
-                >
-                  Current Duty:{" "}
-                  <Box component="span" sx={{ color: "primary.main" }}>
-                    Cooking & Cleaning
-                  </Box>
-                </Typography>
-              </Box>
-              <Box
+        {/* FINTECH MODE: M3 Redesign */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {/* Elevated Spotlight Card */}
+          {(() => {
+            const pct = financialStats?.incomePercent || 0;
+            // Tier-based color & messaging system
+            const getTier = (p) => {
+              if (p >= 90)
+                return {
+                  color: mode === "light" ? "#b71c1c" : "#ffb4ab",
+                  bgTint: "rgba(183, 28, 28, 0.08)",
+                  barColor: "#c62828",
+                  chipBg: mode === "light" ? "#ffcdd2" : alpha("#b71c1c", 0.15),
+                  chipColor: mode === "light" ? "#b71c1c" : "#ffb4ab",
+                  label: "💀 You're cooked",
+                  message: "You are fucked this month 😭",
+                };
+              if (p >= 60)
+                return {
+                  color: mode === "light" ? "#d32f2f" : "#ffb4ab",
+                  bgTint: "rgba(211, 47, 47, 0.06)",
+                  barColor: "#e53935",
+                  chipBg: mode === "light" ? "#ffcdd2" : alpha("#c62828", 0.15),
+                  chipColor: mode === "light" ? "#c62828" : "#ffb4ab",
+                  label: "⚠️ Danger Zone",
+                  message: "Shit's going down from here on 📉",
+                };
+              if (p >= 30)
+                return {
+                  color: mode === "light" ? "#ef6c00" : "#ffcc80",
+                  bgTint: "rgba(239, 108, 0, 0.05)",
+                  barColor: "#f57c00",
+                  chipBg: mode === "light" ? "#fff3e0" : alpha("#e65100", 0.15),
+                  chipColor: mode === "light" ? "#e65100" : "#ffcc80",
+                  label: "😬 Watch Out",
+                  message: "Shit gets real from here... 👀",
+                };
+              return {
+                color: mode === "light" ? "#2e7d32" : "#b4e4b8",
+                bgTint: "transparent",
+                barColor: theme.palette.primary.main,
+                chipBg: mode === "light" ? "#e8f5e9" : alpha("#2e7d32", 0.15),
+                chipColor: mode === "light" ? "#2e7d32" : "#b4e4b8",
+                label: "✅ On Track",
+                message: `₹${Math.round((financialStats?.totalIncome || 0) - (financialStats?.spentThisMonth || 0))} remaining for this month`,
+              };
+            };
+            const tier = getTier(pct);
+
+            return (
+              <Card
                 sx={{
-                  px: 4,
-                  py: 2,
-                  bgcolor:
+                  p: 3,
+                  borderRadius: "28px",
+                  bgcolor: mode === "light" ? "#fff" : "background.paper",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                  mb: 3,
+                  position: "relative",
+                  overflow: "hidden",
+                  border:
                     mode === "light"
-                      ? "rgba(255,255,255,0.3)"
-                      : "rgba(0,0,0,0.2)",
-                  borderTop: `1px solid ${theme.palette.divider}`,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                      ? "1px solid rgba(0,0,0,0.05)"
+                      : "1px solid rgba(255,255,255,0.05)",
                 }}
               >
-                <Box>
+                <Box sx={{ position: "relative", zIndex: 1 }}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        fontWeight: 700,
+                        color: "text.secondary",
+                        letterSpacing: "1px",
+                      }}
+                    >
+                      Monthly Expenditure
+                    </Typography>
+                    <Chip
+                      label={tier.label}
+                      size="small"
+                      sx={{
+                        bgcolor: tier.chipBg,
+                        color: tier.chipColor,
+                        fontWeight: 800,
+                        height: 26,
+                        fontSize: "0.65rem",
+                        border: `1px solid ${alpha(tier.chipColor, 0.2)}`,
+                      }}
+                    />
+                  </Stack>
+                  <Stack
+                    direction="row"
+                    alignItems="baseline"
+                    spacing={1}
+                    sx={{ mb: 0.5 }}
+                  >
+                    <Typography
+                      variant="h2"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: "3rem",
+                        letterSpacing: "-2px",
+                        color: tier.color,
+                        transition: "color 0.5s ease",
+                      }}
+                    >
+                      ₹{Math.round(financialStats?.spentThisMonth || 0)}
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{ color: "text.secondary", fontWeight: 600 }}
+                    >
+                      / ₹{Math.round(financialStats?.totalIncome || 0)}
+                    </Typography>
+                  </Stack>
                   <Typography
-                    variant="caption"
+                    variant="body2"
                     sx={{
-                      color: "text.secondary",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "1px",
+                      color: pct >= 30 ? tier.color : "text.secondary",
+                      fontWeight: pct >= 60 ? 700 : 500,
+                      mb: 3,
+                      transition: "all 0.3s ease",
                     }}
                   >
-                    Passenger
+                    {tier.message}
                   </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                    {passenger || "Not Set"}
-                  </Typography>
-                </Box>
-                <Chip
-                  label="Relaxing"
-                  variant="filled"
-                  size="small"
-                  sx={{
-                    bgcolor: "success.container",
-                    color: "success.onContainer",
-                    fontWeight: 600,
-                  }}
-                />
-              </Box>
-            </Card>
 
-            <Grid container spacing={2}>
-              <Grid size={6}>
-                <Card
-                  variant="filled"
-                  sx={{
-                    p: 3,
-                    borderRadius: "24px",
-                    bgcolor: "primary.container",
-                    color: "primary.onContainer",
-                    textAlign: "center",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 1,
-                    height: "100%",
-                  }}
-                >
-                  <CalendarCheck size={32} weight="duotone" />
                   <Box>
-                    <Typography
-                      variant="caption"
-                      sx={{ fontWeight: 600, opacity: 0.8 }}
-                    >
-                      MAID BILL
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                      ₹{maidStats?.perPerson}
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-              <Grid size={6}>
-                <Card
-                  variant="filled"
-                  sx={{
-                    p: 3,
-                    borderRadius: "24px",
-                    bgcolor: "secondary.container",
-                    color: "secondary.onContainer",
-                    textAlign: "center",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 1,
-                    height: "100%",
-                  }}
-                >
-                  <DiceFive size={32} weight="duotone" />
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      sx={{ fontWeight: 600, opacity: 0.8 }}
-                    >
-                      TASKS
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                      {tasksData?.tasks?.length || 0}
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-            </Grid>
-          </motion.div>
-        ) : (
-          /* FINTECH MODE: M3 Redesign */
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            {/* Elevated Spotlight Card */}
-            {(() => {
-              const pct = financialStats?.incomePercent || 0;
-              // Tier-based color & messaging system
-              const getTier = (p) => {
-                if (p >= 90)
-                  return {
-                    color: "#b71c1c",
-                    bgTint: "rgba(183, 28, 28, 0.08)",
-                    barColor: "#c62828",
-                    chipBg: "#ffcdd2",
-                    chipColor: "#b71c1c",
-                    label: "💀 You're cooked",
-                    message: "You are fucked this month 😭",
-                  };
-                if (p >= 60)
-                  return {
-                    color: "#d32f2f",
-                    bgTint: "rgba(211, 47, 47, 0.06)",
-                    barColor: "#e53935",
-                    chipBg: "#ffcdd2",
-                    chipColor: "#c62828",
-                    label: "⚠️ Danger Zone",
-                    message: "Shit's going down from here on 📉",
-                  };
-                if (p >= 30)
-                  return {
-                    color: "#ef6c00",
-                    bgTint: "rgba(239, 108, 0, 0.05)",
-                    barColor: "#f57c00",
-                    chipBg: "#fff3e0",
-                    chipColor: "#e65100",
-                    label: "😬 Watch Out",
-                    message: "Shit gets real from here... 👀",
-                  };
-                return {
-                  color: "#2e7d32",
-                  bgTint: "transparent",
-                  barColor: theme.palette.primary.main,
-                  chipBg:
-                    mode === "light" ? "#e8f5e9" : "rgba(46, 125, 50, 0.15)",
-                  chipColor: "#2e7d32",
-                  label: "✅ On Track",
-                  message: `₹${Math.round((financialStats?.totalIncome || 0) - (financialStats?.spentThisMonth || 0))} remaining for this month`,
-                };
-              };
-              const tier = getTier(pct);
-
-              return (
-                <Card
-                  sx={{
-                    p: 3,
-                    borderRadius: "28px",
-                    bgcolor: "surface.main",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                    mb: 3,
-                    position: "relative",
-                    overflow: "hidden",
-                    border:
-                      mode === "light"
-                        ? "1px solid rgba(0,0,0,0.05)"
-                        : "1px solid rgba(255,255,255,0.05)",
-                  }}
-                >
-                  <Box sx={{ position: "relative", zIndex: 1 }}>
                     <Stack
                       direction="row"
                       justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 2 }}
+                      sx={{ mb: 1 }}
                     >
                       <Typography
-                        variant="overline"
+                        variant="body2"
+                        sx={{ fontWeight: 500, color: "text.secondary" }}
+                      >
+                        Spending vs Income
+                      </Typography>
+                      <Typography
+                        variant="body2"
                         sx={{
                           fontWeight: 700,
-                          color: "text.secondary",
-                          letterSpacing: "1px",
-                        }}
-                      >
-                        Monthly Expenditure
-                      </Typography>
-                      <Chip
-                        label={tier.label}
-                        size="small"
-                        sx={{
-                          bgcolor: tier.chipBg,
-                          color: tier.chipColor,
-                          fontWeight: 800,
-                          height: 26,
-                          fontSize: "0.65rem",
-                          border: `1px solid ${alpha(tier.chipColor, 0.2)}`,
-                        }}
-                      />
-                    </Stack>
-                    <Stack
-                      direction="row"
-                      alignItems="baseline"
-                      spacing={1}
-                      sx={{ mb: 0.5 }}
-                    >
-                      <Typography
-                        variant="h2"
-                        sx={{
-                          fontWeight: 800,
-                          fontSize: "3rem",
-                          letterSpacing: "-2px",
                           color: tier.color,
                           transition: "color 0.5s ease",
                         }}
                       >
-                        ₹{Math.round(financialStats?.spentThisMonth || 0)}
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ color: "text.secondary", fontWeight: 600 }}
-                      >
-                        / ₹{Math.round(financialStats?.totalIncome || 0)}
+                        {Math.round(pct)}%
                       </Typography>
                     </Stack>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pct >= 30 ? tier.color : "text.secondary",
-                        fontWeight: pct >= 60 ? 700 : 500,
-                        mb: 3,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      {tier.message}
-                    </Typography>
-
-                    <Box>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        sx={{ mb: 1 }}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 500, color: "text.secondary" }}
-                        >
-                          Spending vs Income
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 700,
-                            color: tier.color,
-                            transition: "color 0.5s ease",
-                          }}
-                        >
-                          {Math.round(pct)}%
-                        </Typography>
-                      </Stack>
-                      <Box
-                        sx={{
-                          height: 8,
-                          bgcolor: "action.hover",
-                          borderRadius: 4,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${Math.min(pct, 100)}%` }}
-                          transition={{ duration: 1, ease: "easeOut" }}
-                          style={{
-                            height: "100%",
-                            backgroundColor: tier.barColor,
-                            borderRadius: 4,
-                            transition: "background-color 0.5s ease",
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </Box>
-                </Card>
-              );
-            })()}
-
-            {/* M3 Filled Cards Grid - Strict 2x2 */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              {[
-                {
-                  label: "My Spent",
-                  value: financialStats?.spentThisMonth,
-                  color: "primary",
-                  icon: <ArrowUpRight />,
-                },
-                {
-                  label: "You Owe",
-                  value: financialStats?.totalOwe,
-                  color: "error",
-                  icon: <ArrowDownLeft />,
-                },
-                {
-                  label: "Owed to You",
-                  value: financialStats?.totalOwed,
-                  color: "success",
-                  icon: <ArrowUpRight />,
-                },
-                {
-                  label: "Maid Share",
-                  value: maidStats?.perPerson,
-                  color: "secondary",
-                  icon: <User />,
-                },
-              ].map((item, i) => (
-                <Grid size={6} key={i}>
-                  <Card
-                    variant="filled"
-                    sx={{
-                      p: 2.5,
-                      borderRadius: "24px",
-                      bgcolor: `${item.color}.container`,
-                      color: `${item.color}.onContainer`,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1.5,
-                      border:
-                        mode === "light"
-                          ? "1px solid rgba(0,0,0,0.02)"
-                          : "1px solid rgba(255,255,255,0.05)",
-                      position: "relative",
-                      overflow: "hidden",
-                    }}
-                  >
                     <Box
                       sx={{
-                        bgcolor: "background.paper",
-                        p: 1,
-                        borderRadius: "12px",
-                        color: `${item.color}.main`,
-                        display: "flex",
-                        width: "fit-content",
-                        boxShadow:
-                          mode === "light"
-                            ? "0 2px 8px rgba(0,0,0,0.03)"
-                            : "0 4px 12px rgba(0,0,0,0.2)",
+                        height: 8,
+                        bgcolor: "action.hover",
+                        borderRadius: 4,
+                        overflow: "hidden",
                       }}
                     >
-                      {React.cloneElement(item.icon, {
-                        size: 20,
-                        weight: "duotone",
-                      })}
-                    </Box>
-                    <Box>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontWeight: 600,
-                          opacity: 0.7,
-                          display: "block",
-                          mb: 0.5,
-                          letterSpacing: "0.5px",
-                          fontSize: "0.65rem",
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(pct, 100)}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        style={{
+                          height: "100%",
+                          backgroundColor: tier.barColor,
+                          borderRadius: 4,
+                          transition: "background-color 0.5s ease",
                         }}
-                      >
-                        {item.label.toUpperCase()}
-                      </Typography>
-                      <Typography
-                        variant="h5"
-                        sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
-                      >
-                        ₹{Math.round(item.value)}
-                      </Typography>
+                      />
                     </Box>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+                  </Box>
+                </Box>
+              </Card>
+            );
+          })()}
 
-            <Box sx={{ px: 1 }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 2.5 }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 700, letterSpacing: "-0.5px" }}
-                >
-                  Recent Activity
-                </Typography>
-                <Button
-                  size="small"
-                  onClick={() => navigate("/transactions")}
+          {/* M3 Filled Cards Grid - Strict 2x2 */}
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            {[
+              {
+                label: "My Spent",
+                value: financialStats?.spentThisMonth,
+                color: "primary",
+                icon: <ArrowUpRight />,
+              },
+              {
+                label: "You Owe",
+                value: financialStats?.totalOwe,
+                color: "error",
+                icon: <ArrowDownLeft />,
+              },
+              {
+                label: "Owed to You",
+                value: financialStats?.totalOwed,
+                color: "success",
+                icon: <ArrowUpRight />,
+              },
+              {
+                label: "Maid Share",
+                value: maidStats?.perPerson,
+                color: "secondary",
+                icon: <User />,
+              },
+            ].map((item, i) => (
+              <Grid size={6} key={i}>
+                <Card
+                  variant="filled"
                   sx={{
-                    borderRadius: "20px",
-                    textTransform: "none",
-                    fontWeight: 700,
+                    p: 2.5,
+                    borderRadius: "24px",
+                    bgcolor: `${item.color}.container`,
+                    color: `${item.color}.onContainer`,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1.5,
+                    border:
+                      mode === "light"
+                        ? "1px solid rgba(0,0,0,0.02)"
+                        : "1px solid rgba(255,255,255,0.05)",
+                    position: "relative",
+                    overflow: "hidden",
                   }}
                 >
-                  View History
-                </Button>
-              </Stack>
-
-              <Stack spacing={1.5}>
-                {financialStats?.recentActivity?.map((t, idx) => (
-                  <Card
-                    key={idx}
-                    variant="outlined"
+                  <Box
                     sx={{
-                      p: 2,
-                      borderRadius: "20px",
+                      bgcolor: "background.paper",
+                      p: 1,
+                      borderRadius: "12px",
+                      color: `${item.color}.main`,
                       display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      border: `1px solid ${theme.palette.divider}`,
-                      bgcolor: "transparent",
-                      "&:hover": { bgcolor: "action.hover" },
+                      width: "fit-content",
+                      boxShadow:
+                        mode === "light"
+                          ? "0 2px 8px rgba(0,0,0,0.03)"
+                          : "0 4px 12px rgba(0,0,0,0.2)",
                     }}
                   >
-                    <Avatar
+                    {React.cloneElement(item.icon, {
+                      size: 20,
+                      weight: "duotone",
+                    })}
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="caption"
                       sx={{
-                        width: 44,
-                        height: 44,
-                        bgcolor:
-                          t.user_id === user?.id
-                            ? "primary.container"
-                            : mode === "light"
-                              ? "#f0f0f0"
-                              : "rgba(255,255,255,0.05)",
-                        color:
-                          t.user_id === user?.id
-                            ? "primary.onContainer"
-                            : "text.primary",
+                        fontWeight: 600,
+                        opacity: 0.7,
+                        display: "block",
+                        mb: 0.5,
+                        letterSpacing: "0.5px",
+                        fontSize: "0.65rem",
                       }}
                     >
-                      {t.description?.toLowerCase().includes("food") ? (
-                        <CookingPot weight="duotone" />
-                      ) : t.description?.toLowerCase().includes("grocer") ? (
-                        <Sparkle weight="duotone" />
-                      ) : (
-                        <Wallet weight="duotone" />
-                      )}
-                    </Avatar>
+                      {item.label.toUpperCase()}
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
+                    >
+                      ₹{Math.round(item.value)}
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
 
-                    <Box sx={{ flex: 1 }}>
-                      <Typography
-                        variant="body1"
-                        sx={{ fontWeight: 700, fontSize: "0.95rem" }}
-                      >
-                        {t.description || "General Expense"}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary", fontWeight: 600 }}
-                      >
-                        {t.user_id === user?.id ? "You" : t.user_name} •{" "}
-                        {new Date(t.created_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </Typography>
-                    </Box>
+          <Box sx={{ px: 1 }}>
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 2.5 }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, letterSpacing: "-0.5px" }}
+              >
+                Recent Activity
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => navigate("/transactions")}
+                sx={{
+                  borderRadius: "20px",
+                  textTransform: "none",
+                  fontWeight: 700,
+                }}
+              >
+                View History
+              </Button>
+            </Stack>
 
-                    <Box sx={{ textAlign: "right" }}>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontWeight: 800,
-                          color:
-                            t.user_id === user?.id
-                              ? "error.main"
-                              : "success.main",
-                        }}
-                      >
-                        {t.user_id === user?.id ? "-" : "+"}₹
-                        {Math.round(t.amount)}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "text.secondary", fontWeight: 700 }}
-                      >
-                        {t.category || "Shared"}
-                      </Typography>
-                    </Box>
-                  </Card>
-                ))}
-              </Stack>
-            </Box>
-          </motion.div>
-        )}
+            <Stack spacing={1.5}>
+              {financialStats?.recentActivity?.map((t, idx) => (
+                <Card
+                  key={idx}
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    border: `1px solid ${theme.palette.divider}`,
+                    bgcolor: "transparent",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      bgcolor:
+                        t.user_id === user?.id
+                          ? "primary.container"
+                          : mode === "light"
+                            ? "#f0f0f0"
+                            : "rgba(255,255,255,0.05)",
+                      color:
+                        t.user_id === user?.id
+                          ? "primary.onContainer"
+                          : "text.primary",
+                    }}
+                  >
+                    <Wallet weight="duotone" />
+                  </Avatar>
+
+                  <Box sx={{ flex: 1 }}>
+                    <Typography
+                      variant="body1"
+                      sx={{ fontWeight: 700, fontSize: "0.95rem" }}
+                    >
+                      {t.description || "General Expense"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary", fontWeight: 600 }}
+                    >
+                      {t.user_id === user?.id ? "You" : t.user_name} •{" "}
+                      {new Date(t.created_at).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 800,
+                        color:
+                          t.user_id === user?.id
+                            ? "error.main"
+                            : "success.main",
+                      }}
+                    >
+                      {t.user_id === user?.id ? "-" : "+"}₹
+                      {Math.round(t.amount)}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "text.secondary", fontWeight: 700 }}
+                    >
+                      {t.category || "Shared"}
+                    </Typography>
+                  </Box>
+                </Card>
+              ))}
+            </Stack>
+          </Box>
+        </motion.div>
       </Container>
 
       {/* M3 Floating Action Button */}
-      <AnimatePresence>
-        {isMaidPresent && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.5, y: 50 }}
-            style={{ position: "fixed", bottom: 90, right: 24, zIndex: 1000 }}
-          >
-            <Button
-              variant="contained"
-              onClick={() =>
-                navigate("/transactions", { state: { openAddModal: true } })
-              }
-              sx={{
-                py: 1.5,
-                px: 2,
-                borderRadius: "24px",
-                fontWeight: 800,
-                boxShadow:
-                  mode === "light"
-                    ? "0 8px 24px rgba(0,0,0,0.15)"
-                    : "0 12px 32px rgba(0,0,0,0.4)",
-                textTransform: "none",
-                fontSize: "0.7rem",
-                display: "flex",
-                gap: 1.5,
-                bgcolor: "primary.main",
-                color: mode === "light" ? "white" : "#041e49",
-                "&:hover": {
-                  bgcolor: mode === "light" ? "primary.dark" : "#d3e3fd",
-                  boxShadow:
-                    mode === "light"
-                      ? "0 12px 30px rgba(0,0,0,0.2)"
-                      : "0 16px 40px rgba(0,0,0,0.5)",
-                  transform: "translateY(-2px)",
-                },
-                transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              }}
-            >
-              <Plus size={20} weight="bold" />
-              <Typography variant="button" sx={{ fontWeight: 800 }}>
-                Add Expense
-              </Typography>
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.5, y: 50 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.5, y: 50 }}
+        style={{ position: "fixed", bottom: 90, right: 24, zIndex: 1000 }}
+      >
+        <Button
+          variant="contained"
+          onClick={() =>
+            navigate("/transactions", { state: { openAddModal: true } })
+          }
+          sx={{
+            py: 1.5,
+            px: 2,
+            borderRadius: "24px",
+            fontWeight: 800,
+            boxShadow:
+              mode === "light"
+                ? "0 8px 24px rgba(0,0,0,0.15)"
+                : "0 12px 32px rgba(0,0,0,0.4)",
+            textTransform: "none",
+            fontSize: "0.7rem",
+            display: "flex",
+            gap: 1.5,
+            bgcolor: "primary.main",
+            color: mode === "light" ? "white" : "#041e49",
+            "&:hover": {
+              bgcolor: mode === "light" ? "primary.dark" : "#d3e3fd",
+              boxShadow:
+                mode === "light"
+                  ? "0 12px 30px rgba(0,0,0,0.2)"
+                  : "0 16px 40px rgba(0,0,0,0.5)",
+              transform: "translateY(-2px)",
+            },
+            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <Plus size={20} weight="bold" />
+          <Typography variant="button" sx={{ fontWeight: 800 }}>
+            Add Expense
+          </Typography>
+        </Button>
+      </motion.div>
     </Box>
   );
 };
