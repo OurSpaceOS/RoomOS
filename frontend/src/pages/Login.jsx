@@ -29,6 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 import useThemeStore from '../store/themeStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -51,6 +52,10 @@ const Login = () => {
             const response = await api.post(endpoint, creds);
             return response;
         },
+        onError: (err) => {
+            const msg = err.response?.data?.message || err.message || 'Authentication failed';
+            toast.error(msg);
+        },
         onSuccess: (data) => {
             if (isLogin) {
                 setToken(data.token);
@@ -61,10 +66,12 @@ const Login = () => {
                     role: data.user.role, 
                     group_id: data.user.group_id 
                 });
+                toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
                 navigate('/dashboard'); 
             } else {
                 // After registration, toggle back to login
                 setIsLogin(true);
+                toast.success('Registration successful. Please log in.');
                 // Optionally clear credentials or just show success
                 setCredentials({ name: '', email: credentials.email, password: '' });
             }
@@ -141,12 +148,12 @@ const Login = () => {
                         <Box 
                             component="img" 
                             src="/logo.png" 
-                            alt="RoomOS" 
+                            alt="OurSpaceOS" 
                             sx={{ height: '100%', width: '100%', objectFit: 'contain' }} 
                         />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'text.primary', fontSize: '1.6rem' }}>
-                        RoomOS
+                        OurSpaceOS
                     </Typography>
                 </Box>
                 <IconButton 
@@ -193,7 +200,7 @@ const Login = () => {
                             {isLogin ? 'Welcome back' : 'Create account'}
                         </Typography>
                         <Typography variant="body1" sx={{ color: 'text.secondary', fontSize: '1.2rem', fontWeight: 500, opacity: 0.8 }}>
-                            {isLogin ? 'Shared living, perfectly balanced.' : 'Join the RoomOS community today.'}
+                            {isLogin ? 'Shared living, perfectly balanced.' : 'Join the OurSpaceOS community today.'}
                         </Typography>
                     </Box>
                 </motion.div>
@@ -396,7 +403,7 @@ const Login = () => {
 
                 <Box sx={{ mt: 'auto', textAlign: 'center', opacity: 0.5 }}>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.5px' }}>
-                        © HOMESYNCOS
+                        © OurSpaceOS
                     </Typography>
                 </Box>
             </Container>

@@ -142,6 +142,18 @@ class RosterController {
             $data['day_index']
         ]);
 
+        // Notify all group members
+        $membersStmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ? AND id != ?");
+        $membersStmt->execute([$user['group_id'], $userId]);
+        $members = $membersStmt->fetchAll(PDO::FETCH_COLUMN);
+        
+        $dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $dayName = $dayNames[$data['day_index']];
+        
+        foreach ($members as $memberId) {
+            NotificationController::create($this->pdo, $memberId, $userId, 'group', 'Roster Updated', "The boarding plan for $dayName has been updated.");
+        }
+
         echo json_encode(['message' => 'Roster updated']);
     }
 

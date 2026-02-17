@@ -87,7 +87,7 @@ const SplashScreen = ({ onComplete }) => {
                             mb: 0.5
                         }}
                     >
-                        RoomOS
+                        OurSpaceOS
                     </Typography>
                 </motion.div>
 

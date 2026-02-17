@@ -102,6 +102,19 @@ class GroupController {
         $stmt = $this->pdo->prepare("INSERT INTO join_requests (user_id, group_id, status) VALUES (?, ?, 'pending')");
         $stmt->execute([$userId, $data['group_id']]);
 
+        // Notify admins of the target group
+        $adminStmt = $this->pdo->prepare("SELECT id FROM users WHERE group_id = ? AND role = 'admin'");
+        $adminStmt->execute([$data['group_id']]);
+        $admins = $adminStmt->fetchAll();
+
+        $userStmt = $this->pdo->prepare("SELECT name FROM users WHERE id = ?");
+        $userStmt->execute([$userId]);
+        $requester = $userStmt->fetch();
+
+        foreach ($admins as $admin) {
+            NotificationController::create($this->pdo, $admin['id'], $userId, 'group', 'New Join Request', ($requester['name'] ?? 'Someone') . ' wants to join your Space.');
+        }
+
         echo json_encode(['message' => 'Join request sent. Waiting for admin approval.', 'status' => 'pending']);
     }
 
@@ -199,6 +212,9 @@ class GroupController {
             $stmt = $this->pdo->prepare("UPDATE users SET group_id = ? WHERE id = ?");
             $stmt->execute([$request['group_id'], $request['user_id']]);
 
+            // Notify requester
+            NotificationController::create($this->pdo, $request['user_id'], $userId, 'group', 'Request Approved', 'Your request to join the Space has been approved! Welcome aboard.');
+
             $this->pdo->commit();
 
             echo json_encode(['message' => 'Request approved successfully']);
@@ -235,9 +251,19 @@ class GroupController {
             return;
         }
 
+        // Get request details
+        $stmt = $this->pdo->prepare("SELECT user_id FROM join_requests WHERE id = ?");
+        $stmt->execute([$data['request_id']]);
+        $request = $stmt->fetch();
+
         // Update request status
         $stmt = $this->pdo->prepare("UPDATE join_requests SET status = 'rejected' WHERE id = ? AND group_id = ?");
         $stmt->execute([$data['request_id'], $user['group_id']]);
+
+        // Notify requester
+        if ($request) {
+            NotificationController::create($this->pdo, $request['user_id'], $userId, 'group', 'Request Rejected', 'Your request to join the Space was declined.');
+        }
 
         echo json_encode(['message' => 'Request rejected']);
     }
@@ -293,9 +319,9 @@ class GroupController {
             return;
         }
 
-        // Get Members (include profile pictures)
+        // Get Members (include profile pictures and join date)
         $stmt = $this->pdo->prepare("
-            SELECT u.id, u.name, u.email, u.role, u.profile_picture 
+            SELECT u.id, u.name, u.email, u.role, u.profile_picture, u.created_at
             FROM users u 
             WHERE u.group_id = ?
         ");
@@ -303,5 +329,29 @@ class GroupController {
         $members = $stmt->fetchAll();
 
         echo json_encode(['members' => $members]);
+    }
+
+    public function details() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT group_id FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+
+        if (!$user['group_id']) {
+            echo json_encode(['error' => 'No group', 'group' => null]);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, name, created_at FROM `groups` WHERE id = ?");
+        $stmt->execute([$user['group_id']]);
+        $group = $stmt->fetch();
+
+        echo json_encode(['group' => $group]);
     }
 }

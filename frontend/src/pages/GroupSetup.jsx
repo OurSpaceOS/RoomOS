@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../store/auth';
 import useThemeStore from '../store/themeStore';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const GroupSetup = () => {
     const [groupName, setGroupName] = useState('');
@@ -55,7 +56,11 @@ const GroupSetup = () => {
             user.role = 'admin';
             setUser(user);
             setGroup({ id: data.group_id, name: groupName });
+            toast.success(`Group "${groupName}" initialized!`);
             navigate('/dashboard');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to create group');
         }
     });
 
@@ -66,16 +71,11 @@ const GroupSetup = () => {
             return { group_id };
         },
         onSuccess: (data) => {
-            let user = {};
-            try {
-                user = JSON.parse(localStorage.getItem('user') || '{}');
-            } catch (e) {
-                user = {};
-            }
-            user.group_id = data.group_id;
-            setUser(user);
-            setGroup({ id: data.group_id, name: 'My Group' });
+            toast.success('Join request submitted. Expect admin sync soon.');
             navigate('/dashboard');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to join group');
         }
     });
 
@@ -130,12 +130,12 @@ const GroupSetup = () => {
                         <Box 
                             component="img" 
                             src="/logo.png" 
-                            alt="RoomOS" 
+                            alt="OurSpaceOS" 
                             sx={{ height: '100%', width: 'auto' }} 
                         />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                        RoomOS
+                        OurSpaceOS
                     </Typography>
                 </Box>
                 <IconButton onClick={toggleTheme}>
@@ -156,11 +156,6 @@ const GroupSetup = () => {
                         You need to join or create a flat group to continue.
                     </Typography>
 
-                    {(createMutation.isError || joinMutation.isError) && (
-                        <Alert severity="error" sx={{ mb: 4, borderRadius: 3 }}>
-                            {createMutation.error?.message || joinMutation.error?.message || 'Action failed. Please try again.'}
-                        </Alert>
-                    )}
 
                     {/* Create Section */}
                     <Box component="form" onSubmit={handleCreate}>

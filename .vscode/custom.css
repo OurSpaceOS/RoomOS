@@ -1,0 +1,11 @@
+.activitybar > .content > .monaco-action-bar .actions-container {
+  width: 72px; /* Adjust this value as needed */
+  height: auto;
+}
+
+.activitybar > .content > .monaco-action-bar .action-item {
+  display: flex;
+  justify-content: center;
+  height: 72px; /* Match the width for square icons */
+  width: 100%;
+}

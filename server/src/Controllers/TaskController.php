@@ -111,6 +111,17 @@ class TaskController {
         $stmt = $this->pdo->prepare("INSERT INTO tasks (group_id, date, task_json) VALUES (?, ?, ?)");
         $stmt->execute([$user['group_id'], $date, $json]);
 
+        // Notify each member assigned
+        foreach ($assignments as $taskName => $assigneeName) {
+            $uStmt = $this->pdo->prepare("SELECT id FROM users WHERE name = ? AND group_id = ?");
+            $uStmt->execute([$assigneeName, $user['group_id']]);
+            $assigneeId = $uStmt->fetchColumn();
+            
+            if ($assigneeId) {
+                NotificationController::create($this->pdo, $assigneeId, $userId, 'task', 'New Task Assigned', 'You have been assigned: ' . $taskName);
+            }
+        }
+
         echo json_encode(['message' => 'Tasks assigned', 'tasks' => $assignments]);
     }
 }

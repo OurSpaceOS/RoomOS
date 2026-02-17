@@ -97,6 +97,9 @@ $routes = [
     '/auth/reset-password' => ['AuthController', 'resetPassword'],
     '/auth/upload-profile-picture' => ['AuthController', 'uploadProfilePicture'],
     '/auth/get-profile-picture' => ['AuthController', 'getProfilePicture'],
+    '/auth/update-profile' => ['AuthController', 'updateProfile'],
+    '/auth/change-password' => ['AuthController', 'resetPassword'],
+    '/auth/me' => ['AuthController', 'me'],
     
     // Group
     '/group/create' => ['GroupController', 'create'],
@@ -106,6 +109,7 @@ $routes = [
     '/group/approve-request' => ['GroupController', 'approveRequest'],
     '/group/reject-request' => ['GroupController', 'rejectRequest'],
     '/group/my-request-status' => ['GroupController', 'myRequestStatus'],
+    '/group/details' => ['GroupController', 'details'],
 
     // Roster
     '/roster/week' => ['RosterController', 'getWeek'],
@@ -125,11 +129,20 @@ $routes = [
     // Chat
     '/chat/send' => ['ChatController', 'send'],
     '/chat/since' => ['ChatController', 'since'],
+    '/chat/messages' => ['ChatController', 'messages'],
+    '/chat/dm' => ['ChatController', 'dm'],
+    '/chat/conversations' => ['ChatController', 'conversations'],
+    '/chat/mark-read' => ['ChatController', 'markRead'],
+    '/chat/delete' => ['ChatController', 'deleteMessage'],
     
     // Schedule
     '/schedule/save' => ['ScheduleController', 'save'],
     '/schedule/get' => ['ScheduleController', 'get'],
     '/schedule/generate-plan' => ['ScheduleController', 'generatePlan'],
+    
+    // Class Schedule (New Version)
+    '/schedule/save-day' => ['ClassScheduleController', 'saveDay'],
+    '/schedule/get-all' => ['ClassScheduleController', 'get'],
     
     // Updates
     '/updates/check' => ['UpdateController', 'getLatestUpdate'],
@@ -142,6 +155,25 @@ $routes = [
     '/settings/group-get-range' => ['SettingsController', 'getGroupSettingRange'],
     '/settings/group-set' => ['SettingsController', 'setGroupSetting'],
     
+    // Notifications
+    '/notifications' => ['NotificationController', 'list'],
+    '/notifications/read' => ['NotificationController', 'markAsRead'],
+    '/notifications/delete' => ['NotificationController', 'delete'],
+    '/notifications/clear-all' => ['NotificationController', 'clearAll'],
+    
+    // Budget & Income
+    '/budget/stats' => ['BudgetController', 'getBudgetStats'],
+    '/budget/add-income' => ['BudgetController', 'addIncome'],
+    '/budget/update' => ['BudgetController', 'updateBudget'],
+
+    // Auto Debits
+    '/autodebits/list' => ['AutoDebitController', 'list'],
+    '/autodebits/create' => ['AutoDebitController', 'create'],
+    '/autodebits/update' => ['AutoDebitController', 'update'],
+    '/autodebits/toggle' => ['AutoDebitController', 'toggle'],
+    '/autodebits/delete' => ['AutoDebitController', 'delete'],
+    '/autodebits/process' => ['AutoDebitController', 'process'],
+
     // Test
     '/test' => ['TestController', 'index'],
 ];

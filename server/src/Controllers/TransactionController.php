@@ -314,6 +314,16 @@ class TransactionController {
             }
 
             $this->pdo->commit();
+
+            // Notify members who owe money
+            $payerName = $this->getUserName($paidBy);
+            foreach ($splitBetween as $mid) {
+                if ($mid != $paidBy) {
+                    $share = $amount / $memberCount;
+                    NotificationController::create($this->pdo, $mid, $paidBy, 'financial', 'New Expense', $payerName . ' added "' . $data['description'] . '". Your share: ₹' . number_format($share, 2));
+                }
+            }
+
             echo json_encode(['message' => 'Transaction added']);
 
         } catch (Exception $e) {

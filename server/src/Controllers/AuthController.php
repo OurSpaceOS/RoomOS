@@ -58,6 +58,24 @@ class AuthController {
             
             $userId = $this->pdo->lastInsertId();
 
+        // Insert default dock config for the new user
+        $defaultDock = json_encode([
+            ['id' => 'dock_show_home', 'visible' => true],
+            ['id' => 'dock_show_profile', 'visible' => true],
+            ['id' => 'dock_show_wallet', 'visible' => true],
+            ['id' => 'dock_show_chat', 'visible' => true],
+            ['id' => 'dock_show_settings', 'visible' => true],
+            ['id' => 'dock_show_roster', 'visible' => false],
+            ['id' => 'dock_show_crew', 'visible' => false],
+            ['id' => 'dock_show_attendance', 'visible' => false],
+            ['id' => 'dock_show_analytics', 'visible' => false],
+            ['id' => 'dock_show_schedule', 'visible' => false],
+        ]);
+        $dockStmt = $this->pdo->prepare(
+            "INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, 'dock_config', ?)"
+        );
+        $dockStmt->execute([$userId, $defaultDock]);
+
             http_response_code(201);
             echo json_encode(['message' => 'User registered successfully', 'user_id' => $userId]);
         } catch (Exception $e) {
@@ -84,7 +102,7 @@ class AuthController {
         $email = $data['email'];
         $password = $data['password'];
 
-        $stmt = $this->pdo->prepare("SELECT id, name, password_hash, role, group_id FROM users WHERE email = ?");
+        $stmt = $this->pdo->prepare("SELECT id, name, password_hash, role, group_id, monthly_budget FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
@@ -109,7 +127,8 @@ class AuthController {
                 'name' => $user['name'],
                 'email' => $email,
                 'role' => $user['role'],
-                'group_id' => $user['group_id']
+                'group_id' => $user['group_id'],
+                'monthly_budget' => $user['monthly_budget']
             ]
         ]);
     }
@@ -267,6 +286,50 @@ class AuthController {
         }
     }
 
+    public function updateProfile() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            return;
+        }
+
+        $data = json_decode(file_get_contents("php://input"), true);
+        $name = trim($data['name'] ?? '');
+        $email = trim($data['email'] ?? '');
+
+        if (!$name || !$email) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Name and email are required']);
+            return;
+        }
+
+        // Check if email is already used by another user
+        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$email, $userId]);
+        if ($stmt->fetch()) {
+            http_response_code(409);
+            echo json_encode(['error' => 'Email already in use by another account']);
+            return;
+        }
+
+        try {
+            $stmt = $this->pdo->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
+            $stmt->execute([$name, $email, $userId]);
+            
+            echo json_encode(['message' => 'Profile updated successfully']);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Failed to update profile']);
+        }
+    }
+
     public function getProfilePicture() {
         $userId = $this->getUserIdFromToken();
         if (!$userId) {
@@ -291,4 +354,22 @@ class AuthController {
         // Return the filename - frontend will construct the full URL
         echo json_encode(['profile_picture' => $user['profile_picture']]);
     }
+
+    public function me() {
+        $userId = $this->getUserIdFromToken();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Unauthorized']);
+            return;
+        }
+
+        $stmt = $this->pdo->prepare("SELECT id, name, email, role, group_id, monthly_budget FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+
+        echo json_encode(['user' => $user]);
+    }
 }
+
+
+// add a autodeduction of rent, maid, wifi, electricity, water, gas, internet, travell, 
