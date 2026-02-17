@@ -11,8 +11,6 @@ import {
   Grid,
   useTheme,
   alpha,
-  Tab,
-  Tabs,
   Divider,
   Switch,
   FormControlLabel,
@@ -41,7 +39,7 @@ import {
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 import api from "../api";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useSync from "../hooks/useSync";
@@ -70,7 +68,14 @@ const Schedule = () => {
   const queryClient = useQueryClient();
   const { refresh: refreshSync } = useSync();
 
-  const [selectedDay, setSelectedDay] = useState(0);
+  // Get current day of week (0 = Monday, 6 = Sunday in our DAYS array)
+  const getCurrentDayIndex = () => {
+    const jsDay = new Date().getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    // Convert to our format: 0 = Monday, 6 = Sunday
+    return jsDay === 0 ? 6 : jsDay - 1;
+  };
+
+  const [selectedDay, setSelectedDay] = useState(getCurrentDayIndex());
 
   const [schedule, setSchedule] = useState({
     0: [],
@@ -387,70 +392,65 @@ const Schedule = () => {
         </Stack>
       </Box>
 
-      {/* Day Selector - Premium Capsules */}
-      <Box sx={{ px: 2, mb: 4, mt: 2 }}>
-        <Tabs
-          value={selectedDay}
-          onChange={(e, v) => setSelectedDay(v)}
-          variant="scrollable"
-          scrollButtons={false}
-          sx={{
-            "& .MuiTabs-indicator": { display: "none" },
-            "& .MuiTabs-flexContainer": { gap: 1.5 },
-          }}
-        >
-          {DAYS.map((day, index) => (
-            <Tab
-              key={day}
-              label={
-                <Box sx={{ position: "relative" }}>
-                  <Typography
-                    variant="caption"
-                    sx={{ fontWeight: 800, fontSize: "0.75rem" }}
-                  >
-                    {day.substring(0, 3)}
-                  </Typography>
-                  <Box
-                    sx={{
-                      width: 5,
-                      height: 5,
-                      borderRadius: "50%",
-                      bgcolor: selectedDay === index ? "white" : "primary.main",
-                      mx: "auto",
-                      mt: 0.5,
-                      opacity: schedule[index]?.length > 0 ? 1 : 0,
-                      transition: "all 0.3s ease",
-                    }}
-                  />
-                </Box>
-              }
+      {/* Day Selector */}
+      <Box
+        sx={{
+          display: "flex",
+          gap: 1.5,
+          px: 2,
+          py: 2,
+          mb: 3,
+          mt: 2,
+          overflowX: "auto",
+          "&::-webkit-scrollbar": { display: "none" },
+          scrollbarWidth: "none",
+        }}
+      >
+        {DAYS.map((day, index) => (
+          <Box
+            key={day}
+            onClick={() => setSelectedDay(index)}
+            sx={{
+              minWidth: 64,
+              height: 74,
+              borderRadius: "22px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              bgcolor:
+                selectedDay === index ? "primary.main" : "background.paper",
+              color: selectedDay === index ? "white" : "text.secondary",
+              border: `1px solid ${selectedDay === index ? "transparent" : alpha(theme.palette.divider, 0.1)}`,
+              boxShadow:
+                selectedDay === index
+                  ? `0 12px 24px ${alpha(theme.palette.primary.main, 0.3)}`
+                  : "0 4px 12px rgba(0,0,0,0.04)",
+              transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              transform: selectedDay === index ? "translateY(-4px)" : "none",
+              "&:active": { transform: "scale(0.95)" },
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 800, fontSize: "0.75rem" }}
+            >
+              {day.substring(0, 3)}
+            </Typography>
+            <Box
               sx={{
-                minWidth: 64,
-                height: 74,
-                borderRadius: "22px",
-                bgcolor:
-                  selectedDay === index ? "primary.main" : "background.paper",
-                color:
-                  selectedDay === index ? "white !important" : "text.secondary",
-                border: `1px solid ${selectedDay === index ? "primary.main" : alpha(theme.palette.divider, 0.1)}`,
-                boxShadow:
-                  selectedDay === index
-                    ? `0 12px 24px ${alpha(theme.palette.primary.main, 0.3)}`
-                    : "0 4px 12px rgba(0,0,0,0.02)",
-                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&.Mui-selected": {
-                  transform: "translateY(-4px)",
-                },
-                "&:hover": {
-                  bgcolor:
-                    selectedDay === index
-                      ? "primary.main"
-                      : alpha(theme.palette.primary.main, 0.05),
-                },
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                bgcolor: selectedDay === index ? "white" : "primary.main",
+                mt: 0.5,
+                opacity: schedule[index]?.length > 0 ? 1 : 0,
+                transition: "all 0.3s ease",
               }}
             />
-          ))}
-        </Tabs>
+          </Box>
+        ))}
       </Box>
 
       <Container maxWidth="sm">

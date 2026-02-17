@@ -1,10 +1,13 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "../utils/toast";
 import api from "../api";
 
 const useSync = () => {
     const queryClient = useQueryClient();
     const lastSyncStatus = useRef({});
+    const lastRefreshTime = useRef(0);
+    const REFRESH_COOLDOWN = 20000; // 20 seconds
 
     const { data: syncStatus, refetch } = useQuery({
         queryKey: ["sync-status"],
@@ -109,6 +112,20 @@ const useSync = () => {
     }, [syncStatus, queryClient]);
 
     const refresh = useCallback(() => {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - lastRefreshTime.current;
+
+        // Check if still in cooldown
+        if (timeSinceLastRefresh < REFRESH_COOLDOWN) {
+            const remainingSeconds = Math.ceil((REFRESH_COOLDOWN - timeSinceLastRefresh) / 1000);
+            toast.info(`Please wait ${remainingSeconds}s before refreshing again`);
+            return Promise.reject(new Error("Refresh on cooldown"));
+        }
+
+        // Update last refresh time
+        lastRefreshTime.current = now;
+
+        // Perform refresh
         return refetch();
     }, [refetch]);
 

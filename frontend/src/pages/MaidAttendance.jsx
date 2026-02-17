@@ -40,7 +40,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 import api from "../api";
 import useAuthStore from "../store/auth";
 import useSync from "../hooks/useSync";

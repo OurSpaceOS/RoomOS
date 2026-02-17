@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Box,
@@ -42,7 +42,7 @@ import useThemeStore from "../store/themeStore";
 import useSettingsStore from "../store/settingsStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 import useSync from "../hooks/useSync";
 
 const Dashboard = () => {
@@ -57,6 +57,37 @@ const Dashboard = () => {
   const [activeSessionIdx, setActiveSessionIdx] = useState(0);
   const [stackState, setStackState] = useState(0); // 0: collapsed, 1: peeking, 2: expanded
   const { refresh: refreshSync } = useSync();
+
+  // Pull-to-refresh states
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Define handleRefresh early so it can be used in useEffects
+  const handleRefresh = useCallback(() => {
+    setIsRefreshing(true);
+
+    refreshSync()
+      .then(() => {
+        toast.success("Dashboard updated");
+      })
+      .catch((error) => {
+        // Only show error if it's not a cooldown rejection
+        if (error?.message !== "Refresh on cooldown") {
+          toast.error("Failed to refresh");
+        }
+      })
+      .finally(() => {
+        setIsRefreshing(false);
+      });
+  }, [refreshSync]);
+
+  // Cleanup toasts on unmount
+  useEffect(() => {
+    return () => {
+      toast.dismiss(); // Clear all toasts when leaving the page
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -77,6 +108,61 @@ const Dashboard = () => {
       document.body.style.touchAction = "auto";
     };
   }, [stackState]);
+
+  // Pull-to-refresh touch handlers
+  useEffect(() => {
+    let startY = 0;
+    let startScrollTop = 0;
+    const PULL_THRESHOLD = 80; // Lowered threshold for quicker trigger
+
+    const handleTouchStart = (e) => {
+      if (window.scrollY === 0 && stackState === 0 && !isRefreshing) {
+        startY = e.touches[0].clientY;
+        startScrollTop = window.scrollY;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (startY === 0 || stackState > 0) return;
+
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY;
+
+      if (diff > 0 && window.scrollY === 0) {
+        setIsPulling(true);
+        const resistance = 0.7; // Higher resistance = less sensitive, faster to threshold
+        const distance = Math.min(diff * resistance, PULL_THRESHOLD * 1.8);
+        setPullDistance(distance);
+
+        if (diff > 10) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (isPulling) {
+        if (pullDistance >= PULL_THRESHOLD) {
+          handleRefresh();
+        }
+        setIsPulling(false);
+        setPullDistance(0);
+        startY = 0;
+      }
+    };
+
+    document.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [stackState, isPulling, pullDistance, isRefreshing, handleRefresh]);
 
   const indiaTime = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Kolkata",
@@ -365,42 +451,90 @@ const Dashboard = () => {
     return "Good Evening";
   };
 
-  const handleRefresh = () => {
-    const now = Date.now();
-    if (now - lastRefreshTime < 15000) {
-      const remaining = Math.ceil((15000 - (now - lastRefreshTime)) / 1000);
-      toast.error(`Please wait ${remaining}s to refresh again`, {
-        id: "refresh-limit",
-        duration: 2000,
-      });
-      return;
-    }
-
-    // setLastRefreshTime(now); // Let user spam refresh if they want, sync is cheap
-    refreshSync()
-      .then(() => {
-        toast.success("Dashboard updated", {
-          id: "dashboard-refresh",
-          duration: 2000,
-        });
-      })
-      .catch(() => {
-        toast.error("Failed to refresh", {
-          id: "dashboard-refresh-err",
-          duration: 2000,
-        });
-      });
-  };
-
   return (
     <Box
       sx={{
         minHeight: "100vh",
         bgcolor: "background.default",
         pb: 12,
-        transition: "background-color 0.3s ease",
+        transform: `translateY(${pullDistance}px)`,
+        transition: isPulling
+          ? "background-color 0.3s ease"
+          : "transform 0.3s ease, background-color 0.3s ease",
       }}
     >
+      {/* Pull-to-Refresh Indicator */}
+      <AnimatePresence>
+        {(isPulling || isRefreshing) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: "absolute",
+              top: -60,
+              left: 0,
+              right: 0,
+              zIndex: 1,
+              pointerEvents: "none",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                pt: 2,
+                pb: 2,
+              }}
+            >
+              <motion.div
+                animate={
+                  isRefreshing
+                    ? { rotate: 360 }
+                    : { rotate: pullDistance * 4.5 }
+                }
+                transition={
+                  isRefreshing
+                    ? {
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }
+                    : { duration: 0 }
+                }
+              >
+                <ArrowsClockwise
+                  size={32}
+                  weight="bold"
+                  color={theme.palette.primary.main}
+                  style={{
+                    opacity: Math.min(pullDistance / 80, 1),
+                  }}
+                />
+              </motion.div>
+
+              <Typography
+                variant="caption"
+                sx={{
+                  mt: 1,
+                  fontWeight: 700,
+                  color: "text.secondary",
+                  opacity: Math.min(pullDistance / 80, 1),
+                }}
+              >
+                {isRefreshing
+                  ? "Refreshing..."
+                  : pullDistance >= 80
+                    ? "Release to refresh"
+                    : "Pull down to refresh"}
+              </Typography>
+            </Box>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Minimal Header */}
       <Box
         sx={{

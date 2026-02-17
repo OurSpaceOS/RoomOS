@@ -36,7 +36,7 @@ import useAuthStore from "../store/auth";
 import useThemeStore from "../store/themeStore";
 import useSync from "../hooks/useSync";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 
 const Notifications = () => {
   const theme = useTheme();

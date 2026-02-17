@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import SplashScreen from "./components/SplashScreen";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
+import UpdateChecker from "./components/UpdateChecker";
 import useAuthStore from "./store/auth";
 import useSettingsStore from "./store/settingsStore";
 import { Toaster } from "sonner";
@@ -84,8 +85,10 @@ function App() {
         richColors
         position="top-center"
         closeButton
+        expand={false}
         toastOptions={{
-          duration: 3000,
+          duration: 2000,
+          dismissible: true,
           style: {
             background: "var(--paper-overlay)",
             backdropFilter: "blur(10px)",
@@ -112,6 +115,7 @@ function App() {
           element={
             <ProtectedRoute>
               <Layout>
+                <UpdateChecker />
                 <Routes>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/crew" element={<Crew />} />

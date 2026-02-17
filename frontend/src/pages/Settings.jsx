@@ -55,7 +55,7 @@ import useAuthStore from "../store/auth";
 import useSettingsStore from "../store/settingsStore";
 import useThemeStore from "../store/themeStore";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 import { alpha } from "@mui/material/styles";
 
 // Static mapper to avoid serializing React components

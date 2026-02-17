@@ -48,7 +48,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { alpha } from "@mui/material/styles";
-import { toast } from "sonner";
+import toast from "../utils/toast";
 import api from "../api";
 import useSync from "../hooks/useSync";
 
