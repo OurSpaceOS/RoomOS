@@ -5,31 +5,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download | RoomOS for Android</title>
+    <meta name="description"
+        content="Download the RoomOS Android APK. The complete domestic management suite for your device.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="landing.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        .download-page { padding-top: 180px; padding-bottom: 100px; display: flex; align-items: center; justify-content: center; min-height: 80vh; }
-        .download-box { max-width: 500px; width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 60px 40px; text-align: center; }
-        .d-icon { width: 80px; height: 80px; background: rgba(94, 92, 230, 0.1); border-radius: 20px; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto 32px; }
-        .d-btn { display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--primary); color: #fff; text-decoration: none; padding: 20px; border-radius: var(--radius-md); font-weight: 700; font-size: 1.2rem; margin-bottom: 24px; transition: var(--transition); }
-        .d-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--primary-glow); }
-        .d-specs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; text-align: left; padding-top: 32px; border-top: 1px solid var(--border); margin-top: 32px; }
-        .s-item span { display: block; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .s-item b { font-size: 1rem; color: var(--text-dim); }
+        .download-page {
+            padding-top: 160px;
+            padding-bottom: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 85vh;
+        }
+
+        .download-box {
+            max-width: 520px;
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 60px 48px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .download-box:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Gradient top border accent */
+        .download-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light), var(--primary));
+        }
+
+        .d-icon {
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, rgba(94, 92, 230, 0.15), rgba(142, 141, 255, 0.1));
+            border-radius: 24px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin: 0 auto 32px;
+            border: 1px solid rgba(94, 92, 230, 0.2);
+        }
+
+        .download-box h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .download-box>p {
+            color: var(--text-dim);
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+
+        .d-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            text-decoration: none;
+            padding: 20px;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+
+        .d-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px var(--primary-glow);
+        }
+
+        .d-note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+        }
+
+        .d-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: left;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+
+        .s-item span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .s-item b {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .download-page {
+                padding-top: 120px;
+                padding-bottom: 60px;
+                min-height: auto;
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .download-box {
+                padding: 40px 24px;
+                border-radius: var(--radius-md);
+            }
+
+            .download-box h1 {
+                font-size: 1.6rem;
+            }
+
+            .d-btn {
+                font-size: 1rem;
+                padding: 16px;
+            }
+
+            .d-specs {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="glow-system"><div class="glow-1"></div></div>
+    <div class="glow-system">
+        <!-- Replaced by particles.js canvas -->
+    </div>
 
     <nav class="main-nav">
         <div class="container nav-wrap">
             <a href="index.html" class="brand"><i class="ph-fill ph-house-line"></i><span>RoomOS</span></a>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a href="index.html#features">Features</a>
                 <a href="index.html#demo">Showcase</a>
                 <a href="changelog.html">Changelog</a>
@@ -39,6 +183,9 @@
                 </button>
                 <a href="web/index.html" class="btn-nav">Launch App</a>
             </div>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="ph ph-list"></i>
+            </button>
         </div>
     </nav>
 
@@ -46,23 +193,31 @@
         <div class="download-box">
             <div class="d-icon"><i class="ph-fill ph-android-logo"></i></div>
             <h1>RoomOS v2.6.0</h1>
-            <p style="color: var(--text-dim); margin-bottom: 40px;">The complete domestic management suite for your Android device.</p>
-            
-            <a href="https://github.com/Sumit7739/RoomOS_V2/releases/download/v2.6.0/roomos-v2.6.0-release.apk" class="d-btn">
+            <p>The complete domestic management suite for your Android device.</p>
+
+            <a href="https://github.com/Sumit7739/RoomOS_V2/releases/download/v2.6.0/roomos-v2.6.0-release.apk"
+                class="d-btn">
                 <i class="ph-fill ph-download-simple"></i>
                 Download APK
             </a>
-            
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Direct secure download (35MB)</p>
+            <p class="d-note">Direct secure download · 35MB</p>
 
             <div class="d-specs">
                 <div class="s-item">
                     <span>Package</span>
-                    <b>com.homesyncos.roomos.roomos</b>
+                    <b>com.homesyncos.roomos</b>
                 </div>
                 <div class="s-item">
                     <span>Minimum OS</span>
                     <b>Android 8.0+</b>
+                </div>
+                <div class="s-item">
+                    <span>Architecture</span>
+                    <b>ARM64 / ARM</b>
+                </div>
+                <div class="s-item">
+                    <span>Latest</span>
+                    <b>Nov 25, 2025</b>
                 </div>
             </div>
         </div>
@@ -70,10 +225,14 @@
 
     <footer class="footer">
         <div class="container footer-bottom">
-            <p>&copy; 2026 RoomOS Project. Developed by Sumit Srivastava</p>
+            <p>&copy; 2026 RoomOS Project. All rights reserved.</p>
+            <p>Developed by <span>Aditya Kumar Singh</span></p>
         </div>
     </footer>
+
+    <script src="landing.js"></script>
     <script src="theme.js"></script>
+    <script src="particles.js"></script>
 </body>
 
 </html>
