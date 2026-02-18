@@ -11,6 +11,7 @@
     cursor: pointer;
     transition: var(--transition);
 }
+
 .theme-toggle-btn:hover {
     color: #fff;
 }
@@ -37,151 +38,101 @@ body.light-theme {
 .light-theme .brand {
     color: var(--text-main);
 }
+
 .light-theme .nav-links a {
     color: var(--text-dim);
 }
+
 .light-theme .nav-links a:hover {
     color: var(--text-main);
 }
+
 .light-theme .theme-toggle-btn {
-    color: var(--text-main);
-    background: rgba(0,0,0,0.05);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: var(--text-dim);
 }
-.light-theme .theme-toggle-btn i {
-    font-size: 1.2rem;
+
+.light-theme .theme-toggle-btn:hover {
+    color: var(--text-main);
 }
 
 .light-theme .btn-secondary {
     background: #e4e6eb;
     color: #050505;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-.light-theme .btn-secondary:hover {
-    background: #d8dadf;
+    border-color: transparent;
 }
 
 .light-theme .mockup-container {
-    background: #ffffff;
     border-color: #e0e0e0;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.08); /* softer shadow */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
 }
 
-/* Feature & Zigzag Text Fixes */
-.light-theme .zigzag-content h2 {
-    color: #1a1a1a;
+.light-theme .stat-bar {
+    border-color: var(--border);
 }
-.light-theme .zigzag-content p {
-    color: #555;
+
+.light-theme .zigzag-content h2,
+.light-theme .cta-inner h2 {
+    color: #000;
 }
-.light-theme .zigzag-content strong {
-    color: #000; /* was white previously */
-    font-weight: 800;
+
+.light-theme .zigzag-content p,
+.light-theme .cta-inner p {
+    color: #4b4f56;
 }
+
 .light-theme .feature-list li {
     color: #4b4f56;
 }
-.light-theme .feature-list li i {
-    color: var(--primary); /* Keep primary color for icons */
+
+.light-theme .footer {
+    border-color: var(--border);
 }
 
-/* Footer & specific text overrides */
-.light-theme .footer-brand p {
-    color: #666;
-}
-.light-theme .f-col h4 {
-    color: #333; /* Darker heading for visibility */
-    font-weight: 700;
-}
-.light-theme .f-col a {
-    color: #555;
-}
-.light-theme .f-col a:hover {
-    color: var(--primary);
-}
 .light-theme .footer-bottom {
-    border-top: 1px solid rgba(0,0,0,0.1);
-    color: #777;
+    border-color: var(--border);
 }
+
 .light-theme .footer-bottom span {
-    color: #333;
+    color: #000;
 }
 
-/* CTA Section Light Theme */
-.light-theme .cta-inner {
-    background: #f0f2f5;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-.light-theme .cta-inner h2 {
-    color: #1a1a1a;
-}
-.light-theme .cta-inner p {
-    color: #555;
-}
-.light-theme .btn-secondary-white {
-    background: #1a1a1a;
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.light-theme .btn-secondary-white:hover {
-    background: #000;
-    transform: translateY(-2px);
+.light-theme .f-col h4 {
+    color: #969696;
 }
 
-/* Policy & Changelog Pages */
-.light-theme .policy-section h2, 
-.light-theme .r-title {
-    color: #1a1a1a;
-}
-.light-theme .policy-section p, 
-.light-theme .policy-section ul,
-.light-theme .r-desc,
-.light-theme .change-list li {
+.light-theme .f-col a {
     color: #4b4f56;
 }
-.light-theme .last-updated,
-.light-theme .r-date {
-    color: #777;
-}
-.light-theme .change-group h4 {
-    color: #555;
+
+.light-theme .cta-inner {
+    background: #e4e6eb;
+    color: #050505;
 }
 
-/* Navigation & Brand */
-.light-theme .brand span {
-    color: #1a1a1a;
-}
-.light-theme .brand i {
-    color: var(--primary);
-}
-.light-theme .nav-links a {
-    color: #555;
-}
-.light-theme .nav-links a:hover,
-.light-theme .nav-links a.active {
-    color: #1a1a1a;
-}
-.light-theme .menu-toggle {
-    color: #333;
+.light-theme .btn-secondary-white {
+    background: #000;
+    color: #fff;
 }
 
-/* Download Page */
+/* Specific fixes for other pages */
 .light-theme .download-box {
-    background: #ffffff;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+    background: var(--bg-card);
+    border-color: var(--border);
 }
-.light-theme .d-specs {
-    border-top-color: rgba(0,0,0,0.1);
+
+.light-theme .release {
+    background: var(--bg-card);
+    border-color: var(--border);
 }
-.light-theme .s-item b {
-    color: #333;
+
+.light-theme .r-title {
+    color: var(--text-main);
 }
-.light-theme .download-box h1 {
-    color: #1a1a1a;
+
+.light-theme h1 {
+    color: #000;
+}
+
+.light-theme .section-head .sub {
+    color: var(--primary);
 }
