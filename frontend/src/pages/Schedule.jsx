@@ -36,6 +36,7 @@ import {
   CopySimple,
   X,
   ArrowsClockwise,
+  Info,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,6 +102,8 @@ const Schedule = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
   const [isEditing, setIsEditing] = useState({});
+  const [infoTooltipOpen, setInfoTooltipOpen] = useState(false);
+  const [infoSuccess, setInfoSuccess] = useState(false);
 
   // Fetch schedule
   const {
@@ -370,25 +373,33 @@ const Schedule = () => {
             <IconButton
               onClick={() => setImportModalOpen(true)}
               sx={{
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                color: "primary.main",
-                "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                bgcolor: alpha(theme.palette.error.main, 0.1),
+                color: "#ff1744", // Catchy Red
+                "&:hover": {
+                  bgcolor: alpha(theme.palette.error.main, 0.2),
+                  transform: "scale(1.1)"
+                },
+                transition: "all 0.2s ease"
               }}
             >
-              <MagicWand size={22} weight="duotone" />
+              <motion.div
+                animate={{ y: [-3, 3, -3] }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 2.5,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  filter: "drop-shadow(0 4px 8px rgba(255, 23, 68, 0.5))" // Red backdrop shadow
+                }}
+              >
+                <MagicWand size={33} weight="duotone" />
+              </motion.div>
             </IconButton>
           </Tooltip>
-          <Avatar
-            sx={{
-              bgcolor: "primary.main",
-              width: 44,
-              height: 44,
-              borderRadius: "14px",
-              boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
-            }}
-          >
-            <GraduationCap size={26} weight="duotone" />
-          </Avatar>
         </Stack>
       </Box>
 
@@ -420,14 +431,19 @@ const Schedule = () => {
               justifyContent: "center",
               cursor: "pointer",
               bgcolor:
-                selectedDay === index ? "primary.main" : "background.paper",
-              color: selectedDay === index ? "white" : "text.secondary",
+                selectedDay === index
+                  ? "#1e3a8a"
+                  : theme.palette.mode === "dark"
+                    ? alpha("#1e293b", 0.4)
+                    : "background.paper",
+              color: selectedDay === index ? "#ffffff" : "text.secondary",
               border: `1px solid ${selectedDay === index ? "transparent" : alpha(theme.palette.divider, 0.1)}`,
               boxShadow:
                 selectedDay === index
                   ? `0 12px 24px ${alpha(theme.palette.primary.main, 0.3)}`
                   : "0 4px 12px rgba(0,0,0,0.04)",
               transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+              backdropFilter: "blur(8px)",
               transform: selectedDay === index ? "translateY(-4px)" : "none",
               "&:active": { transform: "scale(0.95)" },
             }}
@@ -1018,20 +1034,35 @@ const Schedule = () => {
             fontWeight: 900,
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: 1.5,
           }}
         >
-          <MagicWand
-            size={28}
-            weight="duotone"
-            color={theme.palette.primary.main}
-          />
-          AI Smart Import
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <MagicWand
+              size={28}
+              weight="duotone"
+              color={theme.palette.primary.main}
+            />
+            AI Smart Import
+          </Box>
+          <IconButton
+            size="small"
+            sx={{ color: "info.main" }}
+            onClick={() => setInfoTooltipOpen(true)}
+          >
+            <Info size={28} weight="duotone" />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
+
           <Typography
             variant="body2"
-            sx={{ color: "text.secondary", mb: 3, fontWeight: 600 }}
+            sx={{
+              color: "text.primary",
+              fontWeight: 600,
+              mb: 3,
+            }}
           >
             Paste your schedule JSON below. You can use an AI to scan a picture
             of your physical timetable and generate this format.
@@ -1126,6 +1157,189 @@ Only return the JSON, nothing else. Focus on capturing session names, room numbe
             Process Magic
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Info Modal */}
+      <Dialog
+        open={infoTooltipOpen}
+        onClose={() => {
+          setInfoTooltipOpen(false);
+          setInfoSuccess(false);
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: "28px",
+            p: 0,
+            maxWidth: "400px",
+            bgcolor: alpha(theme.palette.background.paper, 0.95),
+            backdropFilter: "blur(20px)",
+            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+            overflow: "hidden",
+          },
+        }}
+      >
+        <AnimatePresence>
+          {infoTooltipOpen && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 15, stiffness: 200 }}
+            >
+              <DialogTitle
+                sx={{
+                  fontWeight: 900,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  p: 3,
+                  pb: 1,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <motion.div
+                    animate={{
+                      rotate: [0, 15, -15, 0],
+                      scale: [1, 1.2, 1.2, 1],
+                    }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                  >
+                    <Sparkle
+                      size={32}
+                      weight="fill"
+                      color={theme.palette.info.main}
+                    />
+                  </motion.div>
+                  <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                    Magic Guide
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setInfoTooltipOpen(false);
+                    setInfoSuccess(false);
+                  }}
+                  sx={{
+                    bgcolor: alpha(theme.palette.divider, 0.05),
+                    "&:hover": { bgcolor: alpha(theme.palette.divider, 0.1) },
+                  }}
+                >
+                  <X size={20} weight="bold" />
+                </IconButton>
+              </DialogTitle>
+              <DialogContent sx={{ p: 3, pt: 1 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 800,
+                    mb: 2.5,
+                    color: "text.secondary",
+                    opacity: 0.8,
+                  }}
+                >
+                  FOLLOW THESE STEPS TO IMPORT
+                </Typography>
+                <Box
+                  component="ol"
+                  sx={{
+                    pl: 0,
+                    m: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    listStyle: "none",
+                  }}
+                >
+                  {[
+                    "Take a screenshot (SS) of your timetable.",
+                    "Copy the JSON format shown in this app.",
+                    "Upload your SS to any AI (ChatGPT/Gemini).",
+                    "Paste the copied JSON and ask the AI to fill it.",
+                    "Copy the generated JSON from the AI.",
+                    "Paste the final JSON here in the import box.",
+                  ].map((text, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 + idx * 0.05 }}
+                    >
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Box
+                          sx={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            bgcolor: alpha(theme.palette.primary.main, 0.1),
+                            color: "primary.main",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "0.75rem",
+                            fontWeight: 900,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {idx + 1}
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 700, color: "text.primary" }}
+                        >
+                          {text}
+                        </Typography>
+                      </Stack>
+                    </motion.div>
+                  ))}
+                </Box>
+              </DialogContent>
+              <DialogActions sx={{ p: 3, pt: 1 }}>
+                <Button
+                  fullWidth
+                  onClick={() => {
+                    setInfoSuccess(true);
+                    setTimeout(() => {
+                      setInfoTooltipOpen(false);
+                      setInfoSuccess(false);
+                    }, 500);
+                  }}
+                  variant="contained"
+                  sx={{
+                    borderRadius: "20px",
+                    fontWeight: 900,
+                    py: 2,
+                    fontSize: "1rem",
+                    bgcolor: infoSuccess
+                      ? "#4ade80" // Vibrant light green
+                      : theme.palette.primary.main,
+                    boxShadow: infoSuccess
+                      ? `0 8px 25px ${alpha("#4ade80", 0.4)}`
+                      : `0 8px 25px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    transform: infoSuccess ? "scale(0.95)" : "none",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:hover": {
+                      bgcolor: infoSuccess ? "#22c55e" : theme.palette.primary.dark,
+                      transform: infoSuccess ? "scale(0.95)" : "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {infoSuccess ? (
+                      <Check weight="bold" size={22} />
+                    ) : (
+                      <Sparkle weight="fill" size={20} />
+                    )}
+                    <Typography variant="button" sx={{ fontWeight: 900 }}>
+                      {infoSuccess ? "Let's Go!" : "Got it!"}
+                    </Typography>
+                  </Stack>
+                </Button>
+              </DialogActions>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </Dialog>
     </Box>
   );

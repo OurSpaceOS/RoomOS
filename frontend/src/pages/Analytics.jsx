@@ -177,12 +177,18 @@ const CommandCenter = ({ stats, status, periodLabel }) => {
       sx={{
         p: 3,
         borderRadius: "32px",
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+        background:
+          theme.palette.mode === "dark"
+            ? `linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e1b4b 100%)`
+            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         color: "white",
         position: "relative",
         overflow: "hidden",
         mb: 3,
-        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.25)}`,
+        boxShadow:
+          theme.palette.mode === "dark"
+            ? `0 20px 40px rgba(0,0,0,0.4)`
+            : `0 20px 40px ${alpha(theme.palette.primary.main, 0.25)}`,
       }}
     >
       <Box
@@ -324,8 +330,12 @@ const CommandCenter = ({ stats, status, periodLabel }) => {
             sx={{
               height: 6,
               borderRadius: 3,
-              bgcolor: "rgba(255,255,255,0.1)",
-              "& .MuiLinearProgress-bar": { bgcolor: "#fff", borderRadius: 3 },
+              bgcolor: "rgba(255,255,255,0.2)",
+              "& .MuiLinearProgress-bar": {
+                bgcolor: "#fff",
+                borderRadius: 3,
+                boxShadow: "0 0 10px rgba(255,255,255,0.5)",
+              },
             }}
           />
           <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
@@ -363,8 +373,11 @@ const QuickStats = ({ stats }) => {
             p: 2.5,
             flex: 1,
             borderRadius: "28px",
-            bgcolor: alpha(theme.palette.primary.main, 0.08),
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+            background:
+              theme.palette.mode === "dark"
+                ? `linear-gradient(160deg, ${alpha(theme.palette.primary.main, 0.12)} 0%, ${alpha("#000", 0.3)} 100%)`
+                : alpha(theme.palette.primary.main, 0.08),
+            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.15 : 0.1)}`,
             position: "relative",
             overflow: "hidden",
             display: "flex",
@@ -432,8 +445,11 @@ const QuickStats = ({ stats }) => {
             p: 2.5,
             flex: 1,
             borderRadius: "28px",
-            bgcolor: alpha(theme.palette.secondary.main, 0.08),
-            border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+            background:
+              theme.palette.mode === "dark"
+                ? `linear-gradient(160deg, ${alpha(theme.palette.secondary.main, 0.12)} 0%, ${alpha("#000", 0.3)} 100%)`
+                : alpha(theme.palette.secondary.main, 0.08),
+            border: `1px solid ${alpha(theme.palette.secondary.main, theme.palette.mode === "dark" ? 0.15 : 0.1)}`,
             position: "relative",
             overflow: "hidden",
             display: "flex",
@@ -502,8 +518,11 @@ const QuickStats = ({ stats }) => {
         sx={{
           p: 2.5,
           borderRadius: "28px",
-          bgcolor: alpha("#00acc1", 0.08),
-          border: `1px solid ${alpha("#00acc1", 0.1)}`,
+          background:
+            theme.palette.mode === "dark"
+              ? `linear-gradient(160deg, ${alpha("#00acc1", 0.12)} 0%, ${alpha("#000", 0.3)} 100%)`
+              : alpha("#00acc1", 0.08),
+          border: `1px solid ${alpha("#00acc1", theme.palette.mode === "dark" ? 0.15 : 0.1)}`,
           position: "relative",
           overflow: "hidden",
           display: "flex",
@@ -576,8 +595,11 @@ const CategoryList = ({ categories, total }) => {
             sx={{
               p: 2,
               borderRadius: "24px",
-              bgcolor: alpha(cat.color, 0.04),
-              border: `1px solid ${alpha(cat.color, 0.08)}`,
+              bgcolor:
+                theme.palette.mode === "dark"
+                  ? alpha(cat.color, 0.1)
+                  : alpha(cat.color, 0.04),
+              border: `1px solid ${alpha(cat.color, theme.palette.mode === "dark" ? 0.15 : 0.08)}`,
               display: "flex",
               alignItems: "center",
               gap: 2,
@@ -623,7 +645,10 @@ const CategoryList = ({ categories, total }) => {
                     flex: 1,
                     height: 8,
                     borderRadius: 4,
-                    bgcolor: alpha(cat.color, 0.1),
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? alpha(cat.color, 0.2)
+                        : alpha(cat.color, 0.1),
                     "& .MuiLinearProgress-bar": {
                       bgcolor: cat.color,
                       borderRadius: 4,
@@ -719,8 +744,11 @@ const SpendingTrends = ({ sortedMonths, monthlyData }) => {
                     width: "85%",
                     height: `${height}%`,
                     borderRadius: "8px 8px 4px 4px",
-                    bgcolor: alpha(theme.palette.primary.main, 0.25),
-                    border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                    bgcolor:
+                      theme.palette.mode === "dark"
+                        ? alpha(theme.palette.primary.main, 0.4)
+                        : alpha(theme.palette.primary.main, 0.25),
+                    border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.3 : 0.1)}`,
                     transition: "height 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
                   }}
                 />
@@ -730,7 +758,7 @@ const SpendingTrends = ({ sortedMonths, monthlyData }) => {
                 sx={{
                   fontWeight: 800,
                   fontSize: "0.65rem",
-                  opacity: 0.5,
+                  opacity: theme.palette.mode === "dark" ? 0.8 : 0.5,
                   letterSpacing: "0.5px",
                 }}
               >
@@ -876,17 +904,17 @@ const Analytics = () => {
     const activeMonthData =
       selectedMonth === "all"
         ? {
-            shared: totalShared,
-            personal: totalPersonal,
-            total: totalShared + totalPersonal,
-            transactions: myTransactions,
-          }
+          shared: totalShared,
+          personal: totalPersonal,
+          total: totalShared + totalPersonal,
+          transactions: myTransactions,
+        }
         : monthlyData[selectedMonth] || {
-            shared: 0,
-            personal: 0,
-            total: 0,
-            transactions: [],
-          };
+          shared: 0,
+          personal: 0,
+          total: 0,
+          transactions: [],
+        };
 
     const activeSharedCount = activeMonthData.transactions.filter(
       (t) => !t.isPersonal,
@@ -918,10 +946,10 @@ const Analytics = () => {
     const budgetPercent =
       monthlyBudget > 0
         ? (activeSpent /
-            (selectedMonth === "all"
-              ? monthlyBudget * sortedMonths.length
-              : monthlyBudget)) *
-          100
+          (selectedMonth === "all"
+            ? monthlyBudget * sortedMonths.length
+            : monthlyBudget)) *
+        100
         : 0;
 
     return {
@@ -1097,8 +1125,8 @@ const Analytics = () => {
                 selectedMonth === "all"
                   ? "TOTAL"
                   : stats.monthlyData[selectedMonth]?.label
-                      .split(" ")[0]
-                      .toUpperCase()
+                    .split(" ")[0]
+                    .toUpperCase()
               }
             />
 

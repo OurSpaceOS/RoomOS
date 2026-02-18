@@ -26,6 +26,7 @@ import {
   UsersThree,
   ArrowsClockwise,
   Trash,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +35,14 @@ import toast from "../utils/toast";
 import api, { API_BASE } from "../api";
 import useAuthStore from "../store/auth";
 import useSync from "../hooks/useSync";
+import {
+  generateKeyPair,
+  encryptMessage,
+  decryptMessage,
+  deriveGroupKey,
+  encryptSymmetric,
+  decryptSymmetric,
+} from "../utils/crypto";
 
 // ─── Helpers ───
 const getInitials = (name) =>
@@ -45,14 +54,14 @@ const getInitials = (name) =>
     .slice(0, 2);
 
 const USER_COLORS = [
-  "#0b57d0",
-  "#b5179e",
-  "#e65100",
-  "#1b5e20",
-  "#1565c0",
-  "#c62828",
-  "#6a1b9a",
-  "#00695c",
+  "#3b82f6", // Blue
+  "#f43f5e", // Rose
+  "#10b981", // Emerald
+  "#8b5cf6", // Violet
+  "#f59e0b", // Amber
+  "#06b6d4", // Cyan
+  "#ec4899", // Pink
+  "#6366f1", // Indigo
 ];
 
 const getUserColor = (id) => USER_COLORS[(id || 0) % USER_COLORS.length];
@@ -189,6 +198,39 @@ const Chat = () => {
       queryClient.invalidateQueries(["chatConversations"]);
     });
   };
+
+  // ─── Encryption Setup ───
+  const [keys, setKeys] = useState(null);
+  const [groupKey, setGroupKey] = useState(null);
+
+  useEffect(() => {
+    const setupEncryption = async () => {
+      // 1. Handle own keys
+      let pub = localStorage.getItem("roomOS_publicKey");
+      let priv = localStorage.getItem("roomOS_privateKey");
+
+      if (!pub || !priv) {
+        toast.info("Securing your chat...");
+        const newKeys = await generateKeyPair();
+        localStorage.setItem("roomOS_publicKey", newKeys.publicKey);
+        localStorage.setItem("roomOS_privateKey", newKeys.privateKey);
+        // Save to server so others can get it
+        await api.post("/settings/set", {
+          key: "chat_public_key",
+          value: newKeys.publicKey,
+        });
+        pub = newKeys.publicKey;
+        priv = newKeys.privateKey;
+      }
+      setKeys({ publicKey: pub, privateKey: priv });
+
+      // 2. Handle Group Key
+      const gKey = await deriveGroupKey(`room_${user?.group_id}_secret_salt`);
+      setGroupKey(gKey);
+    };
+
+    if (user?.id) setupEncryption();
+  }, [user?.id, user?.group_id]);
 
   const openGroup = () => {
     setView(VIEW.GROUP);
@@ -342,6 +384,8 @@ const Chat = () => {
                 myId={myId}
                 theme={theme}
                 mode={mode}
+                groupKey={groupKey}
+                privateKey={keys?.privateKey}
               />
             </motion.div>
           )}
@@ -366,6 +410,8 @@ const Chat = () => {
                 isGroup
                 theme={theme}
                 mode={mode}
+                groupKey={groupKey}
+                privateKey={keys?.privateKey}
               />
             </motion.div>
           )}
@@ -390,12 +436,42 @@ const Chat = () => {
                 recipientId={dmUserId}
                 theme={theme}
                 mode={mode}
+                privateKey={keys?.privateKey}
               />
             </motion.div>
           )}
         </AnimatePresence>
       </Box>
     </Box>
+  );
+};
+
+// ═══════════════════════════════════════════════════
+//  CONVERSATION LIST
+// ═══════════════════════════════════════════════════
+// ─── Preview Text Decrypter ───
+const PreviewText = ({ message, isGroup, groupKey, privateKey, senderName, isMe }) => {
+  const [text, setText] = useState(message);
+
+  useEffect(() => {
+    const decrypt = async () => {
+      let result = null;
+      if (isGroup && groupKey) {
+        result = await decryptSymmetric(message, groupKey);
+      } else if (!isGroup && privateKey) {
+        result = await decryptMessage(message, privateKey);
+      }
+      if (result) setText(result);
+      else setText(message);
+    };
+    if (message) decrypt();
+  }, [message, isGroup, groupKey, privateKey]);
+
+  return (
+    <>
+      {isMe ? "You: " : senderName ? `${senderName}: ` : ""}
+      {text}
+    </>
   );
 };
 
@@ -411,6 +487,8 @@ const ConversationList = ({
   myId,
   theme,
   mode,
+  groupKey,
+  privateKey,
 }) => {
   return (
     <Box sx={{ px: 2, pt: 1, pb: 4 }}>
@@ -489,9 +567,17 @@ const ConversationList = ({
               mt: 0.3,
             }}
           >
-            {groupLastMsg
-              ? `${groupLastMsg.sender_id == myId ? "You" : groupLastMsg.name}: ${groupLastMsg.message}`
-              : "No messages yet"}
+            {groupLastMsg ? (
+              <PreviewText
+                message={groupLastMsg.message}
+                isGroup
+                groupKey={groupKey}
+                senderName={groupLastMsg.name}
+                isMe={groupLastMsg.sender_id == myId}
+              />
+            ) : (
+              "No messages yet"
+            )}
           </Typography>
         </Box>
       </Box>
@@ -611,9 +697,15 @@ const ConversationList = ({
                     mt: 0.2,
                   }}
                 >
-                  {last
-                    ? `${last.sender_id == myId ? "You: " : ""}${last.message}`
-                    : "Start a conversation"}
+                  {last ? (
+                    <PreviewText
+                      message={last.message}
+                      privateKey={privateKey}
+                      isMe={last.sender_id == myId}
+                    />
+                  ) : (
+                    "Start a conversation"
+                  )}
                 </Typography>
               </Box>
             </Box>
@@ -655,6 +747,8 @@ const ChatThread = ({
   isGroup,
   theme,
   mode,
+  groupKey,
+  privateKey,
 }) => {
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
@@ -663,14 +757,20 @@ const ChatThread = ({
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Fetch messages — 15s auto-refresh
+  // Fetch messages
   const { data: msgData, isLoading } = useQuery({
     queryKey,
     queryFn: () => api.get(endpoint),
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    staleTime: 5000,
   });
+
+  // Fetch recipient's public key if DM
+  const { data: recipientKeyData } = useQuery({
+    queryKey: ["userPublicKey", recipientId],
+    queryFn: () => api.get(`/settings/get?key=chat_public_key&user_id=${recipientId}`),
+    enabled: !!recipientId,
+  });
+  const recipientPublicKey = recipientKeyData?.value;
 
   const messages = msgData?.messages || [];
 
@@ -690,19 +790,27 @@ const ChatThread = ({
     setSending(true);
 
     try {
-      const body = { message: text };
+      let encryptedMessage = text;
+
+      if (isGroup && groupKey) {
+        encryptedMessage = await encryptSymmetric(text, groupKey);
+      } else if (recipientId && recipientPublicKey) {
+        encryptedMessage = await encryptMessage(text, recipientPublicKey);
+      }
+
+      const body = { message: encryptedMessage };
       if (recipientId) body.recipient_id = recipientId;
       await api.post("/chat/send", body);
       queryClient.invalidateQueries(queryKey);
       queryClient.invalidateQueries(["chatConversations"]);
     } catch {
-      toast.error("Failed to send message");
+      toast.error("Failed to send encrypted message");
       setInput(text);
     } finally {
       setSending(false);
       inputRef.current?.focus();
     }
-  }, [input, sending, recipientId, queryKey, queryClient]);
+  }, [input, sending, recipientId, isGroup, groupKey, recipientPublicKey, queryKey, queryClient]);
 
   // Delete message
   const deleteMsg = useCallback(
@@ -847,6 +955,8 @@ const ChatThread = ({
                   onDelete={isMe ? () => deleteMsg(msg.id) : null}
                   theme={theme}
                   mode={mode}
+                  privateKey={privateKey}
+                  groupKey={groupKey}
                 />
               );
             })}
@@ -859,13 +969,16 @@ const ChatThread = ({
       <Box
         sx={{
           px: 2,
-          py: 1.5,
+          py: 2,
           flexShrink: 0,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          bgcolor: "background.paper",
+          borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+          bgcolor: mode === "dark" ? alpha("#0f172a", 0.6) : alpha("#fff", 0.6),
+          backdropFilter: "blur(20px)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        <Stack direction="row" spacing={1} alignItems="flex-end">
+        <Stack direction="row" spacing={1.5} alignItems="flex-end">
           <TextField
             inputRef={inputRef}
             fullWidth
@@ -880,20 +993,23 @@ const ChatThread = ({
                 sendMessage();
               }
             }}
-            variant="outlined"
+            variant="standard"
             InputProps={{
+              disableUnderline: true,
               sx: {
-                borderRadius: "20px",
-                fontSize: "0.9rem",
-                fontWeight: 500,
-                py: 1,
-                px: 2,
-                bgcolor: alpha(theme.palette.divider, 0.04),
-                "& fieldset": {
-                  borderColor: alpha(theme.palette.divider, 0.15),
-                },
-                "&:hover fieldset": {
-                  borderColor: alpha(theme.palette.divider, 0.3),
+                borderRadius: "24px",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                py: 1.5,
+                px: 3,
+                bgcolor: mode === "dark" ? alpha("#1e293b", 0.5) : alpha("#f1f5f9", 0.7),
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                boxShadow: mode === "dark" ? "inset 0 2px 4px rgba(0,0,0,0.2)" : "inset 0 1px 2px rgba(0,0,0,0.05)",
+                transition: "all 0.3s ease",
+                "&.Mui-focused": {
+                  bgcolor: mode === "dark" ? alpha("#1e293b", 0.8) : alpha("#fff", 1),
+                  borderColor: alpha(theme.palette.primary.main, 0.3),
+                  boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
                 },
               },
             }}
@@ -902,26 +1018,41 @@ const ChatThread = ({
             onClick={sendMessage}
             disabled={!input.trim() || sending}
             sx={{
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               flexShrink: 0,
-              bgcolor: input.trim()
-                ? "primary.main"
-                : alpha(theme.palette.divider, 0.08),
-              color: input.trim() ? "white" : "text.disabled",
-              transition: "all 0.2s ease",
+              background: input.trim()
+                ? `linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)`
+                : alpha("#1e3a8a", 0.2),
+              color: input.trim() ? "white" : alpha("#3b82f6", 0.5),
+              boxShadow: input.trim()
+                ? `0 8px 30px ${alpha("#1e3a8a", 0.6)}, 0 0 10px ${alpha("#3b82f6", 0.3)}`
+                : "none",
+              border: `1px solid ${input.trim() ? alpha("#fff", 0.15) : alpha("#1e3a8a", 0.3)}`,
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
               "&:hover": {
-                bgcolor: input.trim()
-                  ? "primary.dark"
-                  : alpha(theme.palette.divider, 0.12),
+                background: input.trim()
+                  ? `linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)`
+                  : alpha(theme.palette.divider, 0.15),
+                transform: input.trim() ? "translateY(-2px) scale(1.05)" : "none",
+                boxShadow: input.trim()
+                  ? `0 12px 28px ${alpha("#1e3a8a", 0.5)}`
+                  : "none",
               },
-              "&:active": { transform: "scale(0.9)" },
+              "&:active": { transform: "scale(0.92)" },
             }}
           >
             {sending ? (
-              <CircularProgress size={18} color="inherit" />
+              <CircularProgress size={22} color="inherit" thickness={5} />
             ) : (
-              <PaperPlaneRight size={20} weight="fill" />
+              <PaperPlaneRight
+                size={24}
+                weight="fill"
+                style={{
+                  transform: input.trim() ? "translateX(2px) rotate(-10deg)" : "none",
+                  transition: "transform 0.3s ease"
+                }}
+              />
             )}
           </IconButton>
         </Stack>
@@ -941,9 +1072,32 @@ const MessageBubble = ({
   onDelete,
   theme,
   mode,
+  privateKey,
+  groupKey,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
+  const [decryptedText, setDecryptedText] = useState(null);
+  const [isEncrypted, setIsEncrypted] = useState(false);
   const avatarUrl = getAvatarUrl(msg.profile_picture);
+
+  useEffect(() => {
+    const decrypt = async () => {
+      let result = null;
+      if (isGroup && groupKey) {
+        result = await decryptSymmetric(msg.message, groupKey);
+      } else if (!isGroup && privateKey) {
+        result = await decryptMessage(msg.message, privateKey);
+      }
+
+      if (result) {
+        setDecryptedText(result);
+        setIsEncrypted(true);
+      } else {
+        setDecryptedText(msg.message); // Fallback for old/plain messages
+      }
+    };
+    decrypt();
+  }, [msg.message, isGroup, groupKey, privateKey]);
 
   return (
     <motion.div
@@ -995,24 +1149,31 @@ const MessageBubble = ({
             py: 1.2,
             borderRadius: isMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
             bgcolor: isMe
-              ? "primary.main"
+              ? mode === "dark"
+                ? "#1e3a8a"
+                : theme.palette.primary.main
               : mode === "light"
                 ? alpha(color, 0.08)
-                : alpha(color, 0.15),
+                : alpha(color, 0.12),
             color: isMe ? "white" : "text.primary",
             wordBreak: "break-word",
             cursor: isMe ? "pointer" : "default",
+            boxShadow: isMe
+              ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`
+              : "none",
+            border: isMe ? "none" : `1px solid ${alpha(color, 0.1)}`,
           }}
         >
           {/* Sender name in group */}
           {isGroup && !isMe && (
             <Typography
               sx={{
-                fontWeight: 800,
-                fontSize: "0.65rem",
-                color: color,
-                mb: 0.3,
-                letterSpacing: "-0.2px",
+                fontWeight: 900,
+                fontSize: "0.7rem",
+                color: mode === "dark" ? alpha(color, 0.9) : color,
+                mb: 0.2,
+                letterSpacing: "0.2px",
+                textShadow: mode === "dark" ? `0 0 10px ${alpha(color, 0.3)}` : "none",
               }}
             >
               {msg.name}
@@ -1028,21 +1189,24 @@ const MessageBubble = ({
               lineHeight: 1.45,
               "& a": { color: "inherit", textDecoration: "underline" },
             }}
-            dangerouslySetInnerHTML={{ __html: linkify(msg.message) }}
+            dangerouslySetInnerHTML={{ __html: linkify(decryptedText || (msg.message?.length > 100 ? "Decrypting..." : msg.message)) }}
           />
 
-          {/* Time */}
-          <Typography
-            sx={{
-              fontSize: "0.55rem",
-              fontWeight: 600,
-              mt: 0.5,
-              textAlign: "right",
-              opacity: isMe ? 0.7 : 0.45,
-            }}
-          >
-            {formatTime(msg.created_at)}
-          </Typography>
+          <Stack direction="row" alignItems="center" justifyContent="flex-end" spacing={0.5} sx={{ mt: 0.5 }}>
+            {isEncrypted && (
+              <ShieldCheck size={10} weight="fill" style={{ opacity: 0.8 }} title="End-to-end encrypted" />
+            )}
+            {/* Time */}
+            <Typography
+              sx={{
+                fontSize: "0.55rem",
+                fontWeight: 600,
+                opacity: isMe ? 0.7 : 0.45,
+              }}
+            >
+              {formatTime(msg.created_at)}
+            </Typography>
+          </Stack>
 
           {/* Delete button */}
           <AnimatePresence>
