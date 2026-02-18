@@ -55,6 +55,15 @@ const ProtectedRoute = ({ children, requireGroup = true }) => {
   return children;
 };
 
+// Public Only Route (Redirects to dashboard if already logged in)
+const PublicOnlyRoute = ({ children }) => {
+  const { token } = useAuthStore();
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
 function App() {
   const [showSplash, setShowSplash] = useState(() => {
     return !sessionStorage.getItem("hasSeenSplash");
@@ -97,8 +106,22 @@ function App() {
       />
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          }
+        />
 
         <Route
           path="/setup"

@@ -5,35 +5,197 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Changelog | RoomOS Updates</title>
+    <meta name="description" content="See what's new in RoomOS. Track every update, fix, and feature release.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="landing.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        .changelog-page { padding-top: 180px; padding-bottom: 100px; }
-        .timeline { max-width: 800px; margin: 0 auto; }
-        .release { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 40px; margin-bottom: 40px; }
-        .r-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .v-badge { background: var(--primary); color: #fff; padding: 4px 12px; border-radius: var(--radius-full); font-weight: 700; font-size: 0.9rem; }
-        .r-date { color: var(--text-muted); font-size: 0.9rem; }
-        .r-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 16px; }
-        .r-desc { color: var(--text-dim); margin-bottom: 32px; }
-        .change-group h4 { color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-size: 0.75rem; margin-bottom: 12px; }
-        .change-list { list-style: none; margin-bottom: 24px; }
-        .change-list li { display: flex; gap: 12px; margin-bottom: 8px; color: var(--text-dim); }
-        .change-list i { color: var(--primary); margin-top: 4px; }
+        .changelog-page {
+            padding-top: 160px;
+            padding-bottom: 100px;
+        }
+
+        .section-head {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-head .sub {
+            color: var(--primary);
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 2px;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .section-head h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+        }
+
+        .timeline {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Timeline line */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary), transparent);
+            opacity: 0.3;
+        }
+
+        .release {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 40px;
+            margin-bottom: 40px;
+            margin-left: 50px;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .release:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-color: var(--border-hover);
+        }
+
+        /* Timeline dot */
+        .release::before {
+            content: '';
+            position: absolute;
+            left: -38px;
+            top: 48px;
+            width: 14px;
+            height: 14px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 3px solid var(--bg-dark);
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .r-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .v-badge {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            padding: 6px 16px;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .r-date {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .r-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .r-desc {
+            color: var(--text-dim);
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+
+        .change-group h4 {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.75rem;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .change-list {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .change-list li {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--text-dim);
+            line-height: 1.6;
+            align-items: flex-start;
+        }
+
+        .change-list i {
+            color: var(--primary);
+            margin-top: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .changelog-page {
+                padding-top: 120px;
+                padding-bottom: 60px;
+            }
+
+            .timeline::before {
+                display: none;
+            }
+
+            .release {
+                margin-left: 0;
+                padding: 28px 20px;
+            }
+
+            .release::before {
+                display: none;
+            }
+
+            .r-title {
+                font-size: 1.4rem;
+            }
+
+            .section-head h1 {
+                font-size: 2.2rem;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="glow-system"><div class="glow-1"></div></div>
+    <div class="glow-system">
+        <!-- Replaced by particles.js canvas -->
+    </div>
 
     <nav class="main-nav">
         <div class="container nav-wrap">
             <a href="index.html" class="brand"><i class="ph-fill ph-house-line"></i><span>RoomOS</span></a>
-            <div class="nav-links">
+            <div class="nav-links" id="nav-links">
                 <a href="index.html#features">Features</a>
                 <a href="index.html#demo">Showcase</a>
                 <a href="changelog.html" class="active">Changelog</a>
@@ -43,12 +205,15 @@
                 </button>
                 <a href="web/index.html" class="btn-nav">Launch App</a>
             </div>
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="ph ph-list"></i>
+            </button>
         </div>
     </nav>
 
     <main class="changelog-page">
         <div class="container">
-            <div class="section-head" style="text-align: center; margin-bottom: 60px;">
+            <div class="section-head">
                 <span class="sub">Evolution</span>
                 <h1>Updates & Progress</h1>
             </div>
@@ -62,13 +227,15 @@
                     </div>
                     <h2 class="r-title">Stability & Polish</h2>
                     <p class="r-desc">Critical fixes for core navigation and production stability.</p>
-                    
+
                     <div class="change-group">
                         <h4>Fixes</h4>
                         <ul class="change-list">
-                            <li><i class="ph ph-check"></i> Fixed async hydration race conditions in storage modules.</li>
+                            <li><i class="ph ph-check"></i> Fixed async hydration race conditions in storage modules.
+                            </li>
                             <li><i class="ph ph-check"></i> Resolved safer area insets for notched devices.</li>
-                            <li><i class="ph ph-check"></i> Corrected URL opener behavior for external link handoff.</li>
+                            <li><i class="ph ph-check"></i> Corrected URL opener behavior for external link handoff.
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -88,10 +255,14 @@
 
     <footer class="footer">
         <div class="container footer-bottom">
-            <p>&copy; 2026 RoomOS Project. Developed by Sumit Srivastava</p>
+            <p>&copy; 2026 RoomOS Project. All rights reserved.</p>
+            <p>Developed by <span>Aditya Kumar Singh</span></p>
         </div>
     </footer>
+
+    <script src="landing.js"></script>
     <script src="theme.js"></script>
+    <script src="particles.js"></script>
 </body>
 
 </html>

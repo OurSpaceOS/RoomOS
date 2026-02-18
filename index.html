@@ -7,12 +7,13 @@
     <title>RoomOS | Shared Living, Simplified</title>
     <meta name="description"
         content="The all-in-one platform for effortless roommate coordination. Track expenses, chores, and sync everything offline-first.">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
     <link rel="stylesheet" href="theme.css">
     <link rel="stylesheet" href="landing.css">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -20,10 +21,8 @@
 
 <body>
     <!-- Immersive Background -->
-    <div class="glow-system">
-        <div class="glow-1"></div>
-        <div class="glow-2"></div>
-    </div>
+    <!-- Immersive Background -->
+    <!-- Replaced by particles.js canvas -->
 
     <!-- Navigation -->
     <nav class="main-nav">
@@ -50,20 +49,24 @@
 
     <!-- Hero Section -->
     <header class="hero">
-        <div class="container hero-grid">
+        <div class="container">
             <div class="hero-content">
-                <div class="badge-new">Version 2.6.0 is out</div>
-                <h1>Shared Living, <br><span>Perfectly Balanced.</span></h1>
-                <p>The operating system your shared home deserves. Coordinate chores, settle expenses, and stay in sync—even when you're offline.</p>
-                <div class="hero-btns">
-                    <a href="web/index.html" class="btn-primary">Get Started Free</a>
-                    <a href="download.html" class="btn-secondary">Download Android</a>
+                <h1>Shared Living.<br><span>Reimagined.</span></h1>
+                <p>The operating system your home deserves. Automate chores, split finances instantly, and sync your
+                    household seamlessly.</p>
+
+                <div class="cta-group">
+                    <button class="btn-primary" onclick="window.location.href='web/index.html'">
+                        Start for Free <i class="ph-bold ph-arrow-right"></i>
+                    </button>
+                    <input type="email" class="hero-input" placeholder="Enter your email for updates..."
+                        aria-label="Email">
                 </div>
             </div>
-            <div class="hero-image-wrap">
-                <div class="mockup-container">
-                    <img src="img/dashdark.png" alt="RoomOS App" class="hero-main-img">
-                </div>
+
+            <div class="mockup-container">
+                <img src="img/dashdark.png" data-img-dark="img/dashdark.png" data-img-light="img/dashboard.png"
+                    alt="RoomOS Dashboard Interface" class="hero-main-img">
             </div>
         </div>
     </header>
@@ -74,7 +77,7 @@
             <div class="stats-grid">
                 <div class="stat-item">
                     <h3>10K+</h3>
-                    <p>Global Residents</p>
+                    <p>Active Residents</p>
                 </div>
                 <div class="stat-item">
                     <h3>500K+</h3>
@@ -82,206 +85,55 @@
                 </div>
                 <div class="stat-item">
                     <h3>$2M+</h3>
-                    <p>Bills Settled</p>
+                    <p>Expenses Settled</p>
                 </div>
                 <div class="stat-item">
                     <h3>99.9%</h3>
-                    <p>Uptime Record</p>
+                    <p>System Uptime</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Core Feature Rows (Zig-Zag) -->
-    <section id="features" class="zigzag-features">
+    <!-- Bento Grid Features -->
+    <section id="features" class="features-section">
         <div class="container">
-            <!-- 1. Interactive Dashboard -->
-            <div class="zigzag-row">
-                <div class="zigzag-content" data-reveal="left">
-                    <span class="sub">Control Center</span>
-                    <h2>Interactive Dashboard</h2>
-                    <p>The heartbeat of your home. Track the <strong>Live Protocol</strong> in real-time, see who's currently assigned to cook or clean, and manage urgent micro-tasks with a single tap.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Live Status Updates (IST Timezone)</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Today's Micro-Tasks & Lottery</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Instant Maid Attendance Summary</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="right">
-                    <div class="mockup-container">
-                        <img src="img/dashdark.png" alt="Dashboard" class="hero-main-img">
-                    </div>
-                </div>
+            <div class="section-head">
+                <span class="sub">Capabilities</span>
+                <h2>Everything you need to <br>run your home.</h2>
             </div>
-
-            <!-- 2. Smart Roster -->
-            <div class="zigzag-row reverse">
-                <div class="zigzag-content" data-reveal="right">
-                    <span class="sub">Automation</span>
-                    <h2>Smart Roster Logic</h2>
-                    <p>Eliminate domestic friction with automated chore rotations. Our <strong>Regeneration Engine</strong> builds weekly plans based on everyone's class schedules and off-days.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Intelligent Shift Regeneration</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Buffer-Time & Alarm Tracking</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Today View with Morning/Night Pills</li>
-                    </ul>
+            <div class="bento-grid">
+                <!-- 1. Expense Tracking (Large) -->
+                <div class="bento-card span-2">
+                    <div class="bento-icon"><i class="ph-fill ph-wallet"></i></div>
+                    <h3 data-feature="expense-title">Expense Tracking</h3>
+                    <p data-feature="expense-desc">Split bills, track debts, and settle up effortlessly.</p>
                 </div>
-                <div class="zigzag-visual" data-reveal="left">
-                    <div class="mockup-container">
-                        <img src="img/roster.png" alt="Roster" class="hero-main-img">
-                    </div>
+                <!-- 2. Smart Lists -->
+                <div class="bento-card">
+                    <div class="bento-icon"><i class="ph-fill ph-shopping-cart"></i></div>
+                    <h3 data-feature="shop-title">Smart Shopping</h3>
+                    <p data-feature="shop-desc">Collaborative lists that sync in real-time.</p>
                 </div>
-            </div>
-
-            <!-- 3. Household Crew -->
-            <div class="zigzag-row">
-                <div class="zigzag-content" data-reveal="left">
-                    <span class="sub">Identity</span>
-                    <h2>Household Crew</h2>
-                    <p>Manage your team with precision. View <strong>Workload Percentages</strong> to ensure chores are distributed fairly, and track member availability at a glance.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Real-time Workload Metrics</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Role-based Access (Admin/Member)</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Profile Personalization with Avatars</li>
-                    </ul>
+                <!-- 3. Task Management -->
+                <div class="bento-card">
+                    <div class="bento-icon"><i class="ph-fill ph-check-square"></i></div>
+                    <h3 data-feature="task-title">Chore Rosters</h3>
+                    <p data-feature="task-desc">Fair, automated scheduling for household tasks.</p>
                 </div>
-                <div class="zigzag-visual" data-reveal="right">
-                    <div class="mockup-container">
-                        <img src="img/crew.png" alt="Crew" class="hero-main-img">
-                    </div>
+                <!-- 4. Maid Attendance (Large) -->
+                <div class="bento-card span-2">
+                    <div class="bento-icon"><i class="ph-fill ph-users"></i></div>
+                    <h3>Maid Attendance Logs</h3>
+                    <p>Track domestic help attendance with precision. Calculate monthly payouts automatically based on
+                        daily logs and agreed rates.</p>
                 </div>
-            </div>
-
-            <!-- 4. Maid Attendance -->
-            <div class="zigzag-row reverse">
-                <div class="zigzag-content" data-reveal="right">
-                    <span class="sub">Domestic Help</span>
-                    <h2>Maid Attendance</h2>
-                    <p>Stop guessing and start tracking. High-precision logs for <strong>Domestic Help</strong> with detailed AM/PM history and automatic financial splitting.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Monthly Attendance Calendar</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Cost-per-Person Calculations</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Detailed History Logs</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="left">
-                    <div class="mockup-container">
-                        <img src="img/maidattendance.png" alt="Attendance" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 5. Expense Engine -->
-            <div class="zigzag-row">
-                <div class="zigzag-content" data-reveal="left">
-                    <span class="sub">Finance</span>
-                    <h2>Expense Engine</h2>
-                    <p>Settle bills without the awkwardness. Sophisticated debt tracking with <strong>recursive splitting</strong> and one-tap settling for multiple roommates.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Debt vs Surplus Visualizers</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Smart Multi-Person Splitting</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Offline-First Transaction Sync</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="right">
-                    <div class="mockup-container">
-                        <img src="img/expenses.png" alt="Expenses" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. Transaction Intelligence (NEW) -->
-            <div class="zigzag-row reverse">
-                <div class="zigzag-content" data-reveal="right">
-                    <span class="sub">Transparency</span>
-                    <h2>Transaction Intelligence</h2>
-                    <p>Get total clarity on every rupee spent. <strong>Itemized Details</strong> show exactly who paid, who owes what, and when the transaction was synced to the cloud.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Full Audit Trails for Every Entry</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Instant Settlement Reminders</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Multi-Currency Support Hooks</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="left">
-                    <div class="mockup-container">
-                        <img src="img/expdetailsdark.png" alt="Expense Details" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 7. Visual Analytics -->
-            <div class="zigzag-row">
-                <div class="zigzag-content" data-reveal="left">
-                    <span class="sub">Insights</span>
-                    <h2>Visual Analytics</h2>
-                    <p>Gain deep insights into your spending habits. Our <strong>Donut Distribution</strong> charts and category-wise breakdowns help you stay under budget.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Category Spending Heatmaps</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Shared vs Personal Cost Split</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Monthly Budget Pace Tracking</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="right">
-                    <div class="mockup-container">
-                        <img src="img/expanalytics.png" alt="Analytics 1" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 8. Spending Distribution (NEW) -->
-            <div class="zigzag-row reverse">
-                <div class="zigzag-content" data-reveal="right">
-                    <span class="sub">Reporting</span>
-                    <h2>Spending Distribution</h2>
-                    <p>Visualize where the money goes with <strong>Categorical Bar Charts</strong>. Identify leaks in your budget and optimize household spending effortlessly.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Top Spending Categories (Groceries, Rent)</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Weekly Spending Velocity</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Individual Contribution Brackets</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="left">
-                    <div class="mockup-container">
-                        <img src="img/expanalytics2.png" alt="Analytics 2" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 9. Historical Trends (NEW) -->
-            <div class="zigzag-row">
-                <div class="zigzag-content" data-reveal="left">
-                    <span class="sub">History</span>
-                    <h2>Historical Analysis</h2>
-                    <p>Track your financial progress over months. <strong>Time-Series Visualization</strong> helps you understand seasonal spikes and long-term spending patterns.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Month-over-Month Comparisons</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Year-to-Date Summary Charts</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Predictive Budget Forecasting</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="right">
-                    <div class="mockup-container">
-                        <img src="img/expanalytics3.png" alt="Analytics 3" class="hero-main-img">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 10. Identity & Profile -->
-            <div class="zigzag-row reverse">
-                <div class="zigzag-content" data-reveal="right">
-                    <span class="sub">Security</span>
-                    <h2>Identity & Profile</h2>
-                    <p>Your unique digital footprint in the house. Manage your <strong>Weekly Schedule</strong>, reset your secure access tokens, and personalize your experience with biometric-ready profile settings.</p>
-                    <ul class="feature-list">
-                        <li><i class="ph-bold ph-check-circle"></i> Weekly Availability Outlines</li>
-                        <li><i class="ph-bold ph-check-circle"></i> Secure Token Management</li>
-                        <li><i class="ph-bold ph-check-circle"></i> One-Tap Logout & Account Purge</li>
-                    </ul>
-                </div>
-                <div class="zigzag-visual" data-reveal="left">
-                    <div class="mockup-container">
-                        <img src="img/profile.png" alt="Profile" class="hero-main-img">
-                    </div>
+                <!-- 5. Analytics -->
+                <div class="bento-card span-3">
+                    <div class="bento-icon"><i class="ph-fill ph-chart-pie-slice"></i></div>
+                    <h3>Deep Financial Analytics</h3>
+                    <p>Understand your spending habits with beautiful visualizations. Category heatmaps, monthly trends,
+                        and personal vs. shared cost breakdowns help you save money.</p>
                 </div>
             </div>
         </div>
@@ -303,26 +155,41 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="container footer-grid">
-            <div class="footer-brand">
-                <a href="#" class="brand">
-                    <i class="ph-fill ph-house-line"></i>
-                    <span>RoomOS</span>
-                </a>
-                <p>Redefining co-living through intelligent architecture. Built for performance and privacy.</p>
-            </div>
-            <div class="footer-links-grid">
+        <div class="container">
+            <div class="footer-content">
+                <div class="f-brand">
+                    <a href="#" class="brand">
+                        <i class="ph-fill ph-house-line"></i>
+                        <span>RoomOS</span>
+                    </a>
+                    <p style="margin-top: 16px; color: var(--text-dim);">
+                        Redefining domestic management through intelligent software.
+                    </p>
+                </div>
+
                 <div class="f-col">
                     <h4>Product</h4>
-                    <a href="#features">Features</a>
-                    <a href="#demo">Showcase</a>
-                    <a href="changelog.html">Updates</a>
+                    <nav>
+                        <a href="#features">Features</a>
+                        <a href="changelog.html">Changelog</a>
+                        <a href="download.html">Download</a>
+                    </nav>
                 </div>
+
                 <div class="f-col">
-                    <h4>Platform</h4>
-                    <a href="web/index.html">Web Version</a>
-                    <a href="download.html">Android APK</a>
-                    <a href="https://github.com/Sumit7739/RoomOS_V2">Github</a>
+                    <h4>Legal</h4>
+                    <nav>
+                        <a href="#" id="terms-link">Terms & Conditions</a>
+                        <a href="#">Privacy Policy</a>
+                    </nav>
+                </div>
+
+                <div class="f-col">
+                    <h4>Social</h4>
+                    <nav>
+                        <a href="https://github.com/Sumit7739/RoomOS_V2">GitHub</a>
+                        <a href="#">Twitter</a>
+                    </nav>
                 </div>
                 <div class="f-col">
                     <h4>Legal</h4>
@@ -330,15 +197,17 @@
                     <a href="terms.html">Terms of Service</a>
                 </div>
             </div>
-        </div>
-        <div class="container footer-bottom">
-            <p>&copy; 2026 RoomOS Project. All rights reserved.</p>
-            <p>Developed by <span>Sumit Srivastava</span></p>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 RoomOS Project.</p>
+                <p>Designed & Developed by <span>Aditya Kumar Singh</span></p>
+            </div>
         </div>
     </footer>
 
     <script src="landing.js"></script>
     <script src="theme.js"></script>
+    <script src="particles.js"></script>
 </body>
 
 </html>
