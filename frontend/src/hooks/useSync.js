@@ -107,6 +107,16 @@ const useSync = () => {
             queryClient.invalidateQueries({ queryKey: ["members"] });
         }
 
+        // 10. Settings Check (Dock, etc)
+        if (syncStatus.settings !== prev.settings) {
+            console.log("Sync: Settings updated");
+            queryClient.invalidateQueries({ queryKey: ["settings"] }); // Or whatever key you use for dock config
+            queryClient.invalidateQueries({ queryKey: ["userSettings"] });
+            // Since we don't have a global settings store hook exposed here easily,
+            // we rely on where `useSettings` or similar is used.
+            // Assuming "dock-config" or "settings" is the query key.
+        }
+
         // Update ref
         lastSyncStatus.current = syncStatus;
     }, [syncStatus, queryClient]);

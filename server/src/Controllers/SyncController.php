@@ -84,6 +84,12 @@ class SyncController {
         $maidUpdate = $stmt->fetchColumn();
         $response['maid_settings'] = $maidUpdate;
 
+        // 3b. Dock/User Settings Checksum
+        // Check for changes in user_settings (like dock_config)
+        $stmt = $this->pdo->prepare("SELECT MAX(updated_at) FROM user_settings WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $response['settings'] = $stmt->fetchColumn();
+
         // 4. Notifications Checksum
         // Count of unread notifications + last created notification
         $stmt = $this->pdo->prepare("
@@ -107,6 +113,7 @@ class SyncController {
 
         // 5. Schedule/Roster Checksum
         // Last updated schedule for the user
+        $stmt = $this->pdo->prepare("SELECT MAX(updated_at) FROM class_schedules WHERE user_id = ?");
         $stmt->execute([$userId]);
         $response['schedule'] = $stmt->fetchColumn();
 

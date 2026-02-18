@@ -43,6 +43,7 @@ import {
   Tag,
   TextAlignLeft,
   Warning,
+  Info,
 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -290,6 +291,56 @@ const AutoDebits = () => {
       </Box>
 
       <Container maxWidth="sm">
+        {/* Scheduled Execution Notice */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Box
+            sx={{
+              mb: 3,
+              p: 2,
+              borderRadius: "20px",
+              bgcolor:
+                mode === "light"
+                  ? alpha(theme.palette.info.main, 0.08)
+                  : alpha(theme.palette.info.main, 0.12),
+              border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: "10px",
+                bgcolor: "info.main",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Info size={20} weight="bold" />
+            </Box>
+            <Typography
+              variant="caption"
+              sx={{
+                color: mode === "light" ? "info.dark" : "info.light",
+                fontWeight: 700,
+                lineHeight: 1.4,
+              }}
+            >
+              Note: Scheduled auto-debits will be processed automatically the
+              next time the app is opened on or after the due date.
+            </Typography>
+          </Box>
+        </motion.div>
+
         {/* Summary Card */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}

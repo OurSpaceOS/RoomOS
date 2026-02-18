@@ -303,15 +303,23 @@ const Wallet = () => {
       setSplitBetween(membersData.members.map((m) => m.id));
   };
 
-  // Auto-open modal if navigated from Dashboard
+  // Auto-open modal or detail if navigated from Dashboard
   useEffect(() => {
     if (location.state?.openAddModal) {
       resetForm();
       setIsAddModalOpen(true);
-      // Clear location state to prevent modal from re-opening on manual refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    } else if (location.state?.transactionId && transData?.transactions) {
+      const targetTx = transData.transactions.find(
+        (t) => t.id === location.state.transactionId,
+      );
+      if (targetTx) {
+        setSelectedExpense(targetTx);
+        setIsDetailModalOpen(true);
+      }
       navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location, navigate, membersData]);
+  }, [location, navigate, membersData, transData]);
 
   if (transLoading || membersLoading) {
     return (

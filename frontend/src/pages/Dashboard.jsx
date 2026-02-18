@@ -16,6 +16,8 @@ import {
   Paper,
   alpha,
   Badge,
+  Collapse,
+  LinearProgress,
 } from "@mui/material";
 import {
   Sun,
@@ -35,6 +37,9 @@ import {
   BookOpen,
   MapPin,
   CaretDoubleDown,
+  CaretDown,
+  Receipt,
+  Handshake,
 } from "@phosphor-icons/react";
 import api from "../api";
 import useAuthStore from "../store/auth";
@@ -54,19 +59,16 @@ const Dashboard = () => {
   const { getSetting, hasMaid } = useSettingsStore();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [lastRefreshTime, setLastRefreshTime] = useState(0);
-  const [activeSessionIdx, setActiveSessionIdx] = useState(0);
+  const [activeSessionIdx, setActiveSessionIdx] = useState(null);
   const [stackState, setStackState] = useState(0); // 0: collapsed, 1: peeking, 2: expanded
+  const [isHeroExpanded, setIsHeroExpanded] = useState(false);
+  const [isSpentExpanded, setIsSpentExpanded] = useState(false);
+  const [isMaidExpanded, setIsMaidExpanded] = useState(false);
+  const [poppedIdx, setPoppedIdx] = useState(null);
   const { refresh: refreshSync } = useSync();
-
-  // Pull-to-refresh states
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isPulling, setIsPulling] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Define handleRefresh early so it can be used in useEffects
   const handleRefresh = useCallback(() => {
-    setIsRefreshing(true);
-
     refreshSync()
       .then(() => {
         toast.success("Dashboard updated");
@@ -76,11 +78,13 @@ const Dashboard = () => {
         if (error?.message !== "Refresh on cooldown") {
           toast.error("Failed to refresh");
         }
-      })
-      .finally(() => {
-        setIsRefreshing(false);
       });
   }, [refreshSync]);
+
+  // Force scroll to top on mount (fixes issue where navigating back scrolls to bottom)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Cleanup toasts on unmount
   useEffect(() => {
@@ -102,67 +106,13 @@ const Dashboard = () => {
     } else {
       document.body.style.overflow = "auto";
       document.body.style.touchAction = "auto";
+      setPoppedIdx(null); // Reset pop when collapsing
     }
     return () => {
       document.body.style.overflow = "auto";
       document.body.style.touchAction = "auto";
     };
   }, [stackState]);
-
-  // Pull-to-refresh touch handlers
-  useEffect(() => {
-    let startY = 0;
-    let startScrollTop = 0;
-    const PULL_THRESHOLD = 80; // Lowered threshold for quicker trigger
-
-    const handleTouchStart = (e) => {
-      if (window.scrollY === 0 && stackState === 0 && !isRefreshing) {
-        startY = e.touches[0].clientY;
-        startScrollTop = window.scrollY;
-      }
-    };
-
-    const handleTouchMove = (e) => {
-      if (startY === 0 || stackState > 0) return;
-
-      const currentY = e.touches[0].clientY;
-      const diff = currentY - startY;
-
-      if (diff > 0 && window.scrollY === 0) {
-        setIsPulling(true);
-        const resistance = 0.7; // Higher resistance = less sensitive, faster to threshold
-        const distance = Math.min(diff * resistance, PULL_THRESHOLD * 1.8);
-        setPullDistance(distance);
-
-        if (diff > 10) {
-          e.preventDefault();
-        }
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (isPulling) {
-        if (pullDistance >= PULL_THRESHOLD) {
-          handleRefresh();
-        }
-        setIsPulling(false);
-        setPullDistance(0);
-        startY = 0;
-      }
-    };
-
-    document.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    document.addEventListener("touchend", handleTouchEnd, { passive: true });
-
-    return () => {
-      document.removeEventListener("touchstart", handleTouchStart);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [stackState, isPulling, pullDistance, isRefreshing, handleRefresh]);
 
   const indiaTime = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Kolkata",
@@ -327,8 +277,40 @@ const Dashboard = () => {
 
     const totalIncome = parseFloat(budgetStats?.total_income || 0);
     const incomePercent =
-      totalIncome > 0 ? Math.min((spentThisMonth / totalIncome) * 100, 100) : 0;
+      totalIncome > 0 ? (spentThisMonth / totalIncome) * 100 : 0;
     const netBalance = totalOwed - totalOwe;
+
+    // Calculate Personal vs Shared for this month
+    const sharedSpent = monthlyTransactions
+      .filter((t) => {
+        try {
+          const split = t.split_between ? JSON.parse(t.split_between) : [];
+          return split.length > 1;
+        } catch (e) {
+          return false;
+        }
+      })
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const personalSpent = spentThisMonth - sharedSpent;
+
+    // Daily flow for current month
+    const dailySpending = {};
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    for (let i = 1; i <= daysInMonth; i++) {
+      dailySpending[i] = 0;
+    }
+
+    // Category Split for this month
+    const categoryDistribution = {};
+    monthlyTransactions.forEach((t) => {
+      const match = t.description?.match(/^\[(.*?)\]/);
+      const cat = match ? match[1] : "other";
+      categoryDistribution[cat] =
+        (categoryDistribution[cat] || 0) + parseFloat(t.amount);
+
+      const day = new Date(t.created_at).getDate();
+      dailySpending[day] += parseFloat(t.amount);
+    });
 
     return {
       totalOwe,
@@ -337,6 +319,10 @@ const Dashboard = () => {
       totalIncome,
       incomePercent,
       netBalance,
+      sharedSpent,
+      personalSpent,
+      categoryDistribution,
+      dailySpending: Object.values(dailySpending),
       recentActivity: userTransactions.slice(0, 8),
     };
   }, [transData, user?.id, budgetStats]);
@@ -370,34 +356,48 @@ const Dashboard = () => {
     }
 
     const sessions = [...todaySchedule.classes].sort((a, b) =>
-      a.startTime.localeCompare(b.startTime),
+      b.startTime.localeCompare(a.startTime),
     );
     const nowMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
 
-    let liveIdx = 0;
+    let ongoingIdx = -1;
+    let bufferIdx = -1;
+    let latestPastIdx = -1;
+    let earliestUpcomingIdx = -1;
+
     for (let i = 0; i < sessions.length; i++) {
-      const current = sessions[i];
-      const next = sessions[i + 1];
-      const nextStartMinutes = next
-        ? parseInt(next.startTime.split(":")[0]) * 60 +
-          parseInt(next.startTime.split(":")[1])
-        : null;
+      const s = sessions[i];
+      const sStart =
+        parseInt(s.startTime.split(":")[0]) * 60 +
+        parseInt(s.startTime.split(":")[1]);
+      const sEnd =
+        parseInt(s.endTime.split(":")[0]) * 60 +
+        parseInt(s.endTime.split(":")[1]);
 
-      const threshold = nextStartMinutes ? nextStartMinutes - 10 : 1440;
-
-      if (nowMinutes < threshold) {
-        const currentEndMinutes =
-          parseInt(current.endTime.split(":")[0]) * 60 +
-          parseInt(current.endTime.split(":")[1]);
-        if (nowMinutes > currentEndMinutes + 30 && !next) {
-          liveIdx = -1;
-        } else {
-          liveIdx = i;
+      if (nowMinutes >= sStart && nowMinutes <= sEnd) {
+        ongoingIdx = i;
+      } else if (nowMinutes < sStart) {
+        if (sStart - nowMinutes <= 10) {
+          if (bufferIdx === -1) bufferIdx = i;
+          else {
+            const currentSelectedStart =
+              parseInt(sessions[bufferIdx].startTime.split(":")[0]) * 60 +
+              parseInt(sessions[bufferIdx].startTime.split(":")[1]);
+            if (sStart < currentSelectedStart) bufferIdx = i;
+          }
         }
-        break;
+        earliestUpcomingIdx = i;
+      } else if (nowMinutes > sEnd) {
+        if (latestPastIdx === -1) latestPastIdx = i;
       }
-      liveIdx = sessions.length - 1; // Default to last if all passed
     }
+
+    let liveIdx = -1;
+    if (ongoingIdx !== -1) liveIdx = ongoingIdx;
+    else if (bufferIdx !== -1) liveIdx = bufferIdx;
+    else if (latestPastIdx !== -1) liveIdx = latestPastIdx;
+    else if (earliestUpcomingIdx !== -1) liveIdx = earliestUpcomingIdx;
+    else liveIdx = 0;
 
     return { todaySessions: sessions, defaultLiveIdx: liveIdx };
   }, [scheduleData, dayName, currentTime]);
@@ -457,84 +457,8 @@ const Dashboard = () => {
         minHeight: "100vh",
         bgcolor: "background.default",
         pb: 12,
-        transform: `translateY(${pullDistance}px)`,
-        transition: isPulling
-          ? "background-color 0.3s ease"
-          : "transform 0.3s ease, background-color 0.3s ease",
       }}
     >
-      {/* Pull-to-Refresh Indicator */}
-      <AnimatePresence>
-        {(isPulling || isRefreshing) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: "absolute",
-              top: -60,
-              left: 0,
-              right: 0,
-              zIndex: 1,
-              pointerEvents: "none",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                pt: 2,
-                pb: 2,
-              }}
-            >
-              <motion.div
-                animate={
-                  isRefreshing
-                    ? { rotate: 360 }
-                    : { rotate: pullDistance * 4.5 }
-                }
-                transition={
-                  isRefreshing
-                    ? {
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }
-                    : { duration: 0 }
-                }
-              >
-                <ArrowsClockwise
-                  size={32}
-                  weight="bold"
-                  color={theme.palette.primary.main}
-                  style={{
-                    opacity: Math.min(pullDistance / 80, 1),
-                  }}
-                />
-              </motion.div>
-
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 1,
-                  fontWeight: 700,
-                  color: "text.secondary",
-                  opacity: Math.min(pullDistance / 80, 1),
-                }}
-              >
-                {isRefreshing
-                  ? "Refreshing..."
-                  : pullDistance >= 80
-                    ? "Release to refresh"
-                    : "Pull down to refresh"}
-              </Typography>
-            </Box>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Minimal Header */}
       <Box
         sx={{
@@ -615,20 +539,26 @@ const Dashboard = () => {
       <Container maxWidth="sm" sx={{ mt: 2 }}>
         {/* Vertical Wallet-style Deck (Swipe Down to Reveal) */}
         {todaySessions.length > 0 && (
-          <Box
-            sx={{
-              position: "relative",
+          <motion.div
+            initial={false}
+            animate={{
               height:
                 stackState === 0
                   ? 170
-                  : stackState === 1
-                    ? 280
-                    : Math.max(400, todaySessions.length * 120),
-              mb: stackState === 0 ? 1 : 4,
-              transition: "all 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
+                  : Math.max(400, todaySessions.length * 110),
+              marginTop: stackState > 0 ? -90 : 48,
+              marginBottom: stackState === 0 ? 8 : 32,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 32,
+              mass: 0.8,
+            }}
+            style={{
+              position: "relative",
               display: "flex",
               justifyContent: "center",
-              mt: 1,
               zIndex: stackState > 0 ? 100 : 1,
             }}
           >
@@ -655,6 +585,7 @@ const Dashboard = () => {
               )}
             </AnimatePresence>
 
+            {/* Main Interactive Stack Layer */}
             <motion.div
               style={{
                 position: "absolute",
@@ -663,254 +594,270 @@ const Dashboard = () => {
                 right: 0,
                 bottom: 0,
                 zIndex: 300,
-                cursor: "ns-resize",
                 touchAction: "none",
               }}
               drag="y"
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={0.1}
               onDragEnd={(e, { offset, velocity }) => {
-                if (offset.y > 80 || (offset.y > 40 && velocity.y > 400)) {
-                  setStackState((prev) => Math.min(2, prev + 1));
+                if (offset.y > 60 || (offset.y > 30 && velocity.y > 300)) {
+                  setStackState(2);
                 } else if (
-                  offset.y < -80 ||
-                  (offset.y < -40 && velocity.y < -400)
+                  offset.y < -60 ||
+                  (offset.y < -30 && velocity.y < -300)
                 ) {
-                  setStackState((prev) => Math.max(0, prev - 1));
+                  setStackState(0);
                 }
               }}
-            />
+            >
+              {todaySessions.map((session, i) => {
+                const isSelected = i === activeSessionIdx;
+                const order = i - activeSessionIdx;
 
-            {todaySessions.map((session, i) => {
-              const isSelected = i === activeSessionIdx;
-              const order = i - activeSessionIdx;
+                // Sorting logic: Active card always on top in collapsed state,
+                // In expanded state, they are in natural order and sit ABOVE gesture layer.
+                let zIndex = 100 - Math.abs(order);
+                if (stackState === 1) zIndex = 350 + i;
+                if (stackState === 2) zIndex = 400 + i;
 
-              // Sorting logic: Active card always on top in collapsed state,
-              // In expanded state, they are in natural order and sit ABOVE gesture layer.
-              let zIndex = 100 - Math.abs(order);
-              if (stackState === 1) zIndex = 350 + i;
-              if (stackState === 2) zIndex = 400 + i;
+                const nowMinutes =
+                  currentTime.getHours() * 60 + currentTime.getMinutes();
+                const start =
+                  parseInt(session.startTime.split(":")[0]) * 60 +
+                  parseInt(session.startTime.split(":")[1]);
+                const end =
+                  parseInt(session.endTime.split(":")[0]) * 60 +
+                  parseInt(session.endTime.split(":")[1]);
+                let status = "Upcoming";
+                if (nowMinutes >= start && nowMinutes <= end)
+                  status = "Ongoing";
+                else if (nowMinutes > end) status = "Past";
 
-              const nowMinutes =
-                currentTime.getHours() * 60 + currentTime.getMinutes();
-              const start =
-                parseInt(session.startTime.split(":")[0]) * 60 +
-                parseInt(session.startTime.split(":")[1]);
-              const end =
-                parseInt(session.endTime.split(":")[0]) * 60 +
-                parseInt(session.endTime.split(":")[1]);
-              let status = "Upcoming";
-              if (nowMinutes >= start && nowMinutes <= end) status = "Ongoing";
-              else if (nowMinutes > end) status = "Past";
+                // Position calculations
+                let yPos = 0;
+                let scale = 1;
+                let opacity = 1;
 
-              // Position calculations
-              let yPos = 0;
-              let scale = 1;
-              let opacity = 1;
-
-              if (stackState === 0) {
-                // Collapsed: Stacked behind active
-                if (i === activeSessionIdx) {
-                  yPos = 0;
-                  scale = 1;
-                  opacity = 1;
-                } else if (i > activeSessionIdx) {
-                  const diff = i - activeSessionIdx;
-                  yPos = diff * -8;
-                  scale = 1 - diff * 0.035;
-                  opacity = diff > 2 ? 0 : 1;
+                if (stackState === 0) {
+                  // Collapsed: Stacked behind active
+                  if (i === activeSessionIdx) {
+                    yPos = 0;
+                    scale = 1;
+                    opacity = 1;
+                  } else if (i < activeSessionIdx) {
+                    // In descending list, smaller indices are LATER in the day (Upcoming)
+                    const diff = activeSessionIdx - i;
+                    yPos = diff * -8;
+                    scale = 1;
+                    opacity = 1;
+                  } else {
+                    // Larger indices are EARLIER in the day (Past)
+                    // Hide them behind the active one
+                    yPos = 0;
+                    scale = 0.95;
+                    opacity = 0;
+                  }
                 } else {
-                  yPos = 0;
-                  scale = 0.9;
-                  opacity = 0;
+                  // Expanded: High contrast list
+                  yPos = i * 110;
+                  if (poppedIdx === i) {
+                    yPos -= 20; // Move up a little
+                    scale = 1.05; // Pop out a little
+                  } else if (poppedIdx !== null) {
+                    // If another card is popped, move others slightly away or just leave them
+                    if (i > poppedIdx) yPos += 20;
+                  } else {
+                    scale = isSelected ? 1.02 : 1;
+                  }
+                  opacity = 1;
                 }
-              } else if (stackState === 1) {
-                // Peeking: Cards fan out slightly
-                yPos = i * 40;
-                scale = 1 - Math.abs(i - activeSessionIdx) * 0.02;
-                opacity = 1;
-              } else {
-                // Expanded: High contrast list
-                yPos = i * 110;
-                scale = isSelected ? 1.02 : 1;
-                opacity = 1;
-              }
 
-              return (
-                <motion.div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    width: "100%",
-                    zIndex: zIndex,
-                    cursor: stackState === 2 ? "pointer" : "default",
-                    touchAction: "none",
-                  }}
-                  drag={stackState > 0 ? "y" : false}
-                  dragConstraints={{ top: 0, bottom: 0 }}
-                  dragElastic={0.1}
-                  onDragEnd={(e, { offset, velocity }) => {
-                    if (stackState > 0) {
-                      if (
-                        offset.y > 80 ||
-                        (offset.y > 40 && velocity.y > 400)
-                      ) {
-                        setStackState((prev) => Math.min(2, prev + 1));
-                      } else if (
-                        offset.y < -80 ||
-                        (offset.y < -40 && velocity.y < -400)
-                      ) {
-                        setStackState((prev) => Math.max(0, prev - 1));
+                return (
+                  <motion.div
+                    key={i}
+                    style={{
+                      position: "absolute",
+                      width: "100%",
+                      zIndex: zIndex,
+                      cursor: stackState === 2 ? "pointer" : "default",
+                      touchAction: "none",
+                    }}
+                    animate={{
+                      y: yPos,
+                      scale: scale,
+                      opacity: opacity,
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      mass: 1,
+                    }}
+                    onTap={() => {
+                      if (stackState === 2) {
+                        if (poppedIdx === i) {
+                          setActiveSessionIdx(i);
+                          setStackState(0);
+                        } else {
+                          setPoppedIdx(i);
+                        }
                       }
-                    }
-                  }}
-                  animate={{
-                    y: yPos,
-                    scale: scale,
-                    opacity: opacity,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 280,
-                    damping: 28,
-                    mass: 0.8,
-                  }}
-                  onClick={() => {
-                    if (stackState === 2) {
-                      setActiveSessionIdx(i);
-                      setStackState(0);
-                    }
-                  }}
-                >
-                  <Card
-                    sx={{
-                      p: stackState === 2 ? 2 : 3,
-                      borderRadius: "28px",
-                      background:
-                        theme.palette.mode === "light"
-                          ? status === "Ongoing"
-                            ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`
-                            : isSelected
-                              ? "#222"
-                              : "#333"
-                          : status === "Ongoing"
-                            ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${alpha(theme.palette.primary.main, 0.4)} 100%)`
-                            : isSelected
-                              ? "#1a1a1a"
-                              : alpha(theme.palette.background.paper, 0.9),
-                      color: "white",
-                      boxShadow:
-                        isSelected || stackState === 2
-                          ? "0 12px 30px rgba(0,0,0,0.3)"
-                          : "none",
-                      border: `1px solid ${alpha("#fff", 0.1)}`,
-                      position: "relative",
-                      overflow: "hidden",
-                      height: 160,
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "center",
                     }}
                   >
-                    <Box
+                    <Card
                       sx={{
-                        position: "absolute",
-                        top: -10,
-                        right: -10,
-                        opacity: 0.08,
+                        p: stackState === 2 ? 2 : 3,
+                        borderRadius: "28px",
+                        background:
+                          theme.palette.mode === "light"
+                            ? status === "Ongoing"
+                              ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`
+                              : status === "Upcoming" && isSelected
+                                ? `linear-gradient(135deg, #2c3e50 0%, #000000 100%)` // Premium Obsidian for Upcoming
+                                : isSelected
+                                  ? "#1a1a1a"
+                                  : "#252525"
+                            : status === "Ongoing"
+                              ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`
+                              : status === "Upcoming" && isSelected
+                                ? `linear-gradient(135deg, #121212 0%, #1a1a1a 100%)`
+                                : isSelected
+                                  ? "#0f0f0f"
+                                  : "#141414",
+                        color: "white",
+                        boxShadow:
+                          isSelected || stackState === 2
+                            ? "0 12px 30px rgba(0,0,0,0.3)"
+                            : "none",
+                        border: `1px solid ${alpha("#fff", 0.1)}`,
+                        position: "relative",
+                        overflow: "hidden",
+                        height: 160,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
                       }}
                     >
-                      <BookOpen size={100} weight="duotone" />
-                    </Box>
-
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 1 }}
-                    >
-                      <Typography
-                        variant="caption"
+                      <Box
                         sx={{
-                          fontWeight: 800,
-                          textTransform: "uppercase",
-                          letterSpacing: "1px",
-                          opacity: 0.7,
+                          position: "absolute",
+                          top: -10,
+                          right: -10,
+                          opacity: 0.08,
                         }}
                       >
-                        {status} • {session.startTime}
-                      </Typography>
-                      {isSelected && stackState === 0 && (
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            bgcolor: "primary.light",
-                            borderRadius: "50%",
-                          }}
-                        />
-                      )}
-                    </Stack>
-
-                    <Typography
-                      variant={stackState === 2 ? "h6" : "h5"}
-                      sx={{ fontWeight: 900, mb: 1, letterSpacing: "-0.5px" }}
-                    >
-                      {session.subject}
-                    </Typography>
-
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 0.8 }}
-                      >
-                        <MapPin size={18} weight="fill" />
-                        <Typography
-                          variant="body2"
-                          sx={{ fontWeight: 700, opacity: 0.8 }}
-                        >
-                          {session.room || "No Room"}
-                        </Typography>
+                        <BookOpen size={100} weight="duotone" />
                       </Box>
 
-                      {status === "Ongoing" && (
-                        <Box
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ mb: 1 }}
+                      >
+                        <Typography
+                          variant="caption"
                           sx={{
-                            flex: 1,
-                            height: 4,
-                            bgcolor: "rgba(255,255,255,0.1)",
-                            borderRadius: 2,
-                            overflow: "hidden",
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                            opacity: 0.7,
                           }}
                         >
+                          {status} •{" "}
                           {(() => {
-                            const curr =
-                              currentTime.getHours() * 60 +
-                              currentTime.getMinutes();
-                            const prog = Math.min(
-                              100,
-                              Math.max(
-                                0,
-                                ((curr - start) / (end - start)) * 100,
-                              ),
-                            );
-                            return (
-                              <Box
-                                sx={{
-                                  width: `${prog}%`,
-                                  height: 1,
-                                  bgcolor: "white",
-                                }}
-                              />
-                            );
+                            const formatTime = (timeStr) => {
+                              const [h, m] = timeStr.split(":");
+                              const date = new Date();
+                              date.setHours(parseInt(h), parseInt(m));
+                              return date
+                                .toLocaleTimeString("en-US", {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                                .replace(" ", "")
+                                .toLowerCase();
+                            };
+                            return `${formatTime(session.startTime)} - ${formatTime(session.endTime)}`;
                           })()}
+                        </Typography>
+                        {isSelected && stackState === 0 && (
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              bgcolor: "primary.light",
+                              borderRadius: "50%",
+                            }}
+                          />
+                        )}
+                      </Stack>
+
+                      <Typography
+                        variant={stackState === 2 ? "h6" : "h5"}
+                        sx={{ fontWeight: 900, mb: 1, letterSpacing: "-0.5px" }}
+                      >
+                        {session.subject}
+                      </Typography>
+
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.8,
+                          }}
+                        >
+                          <MapPin size={18} weight="fill" />
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 700, opacity: 0.8 }}
+                          >
+                            {session.room || "No Room"}
+                          </Typography>
                         </Box>
-                      )}
-                    </Stack>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </Box>
+
+                        {status === "Ongoing" && (
+                          <Box
+                            sx={{
+                              flex: 1,
+                              height: 4,
+                              bgcolor: "rgba(255,255,255,0.1)",
+                              borderRadius: 2,
+                              overflow: "hidden",
+                            }}
+                          >
+                            {(() => {
+                              const curr =
+                                currentTime.getHours() * 60 +
+                                currentTime.getMinutes();
+                              const prog = Math.min(
+                                100,
+                                Math.max(
+                                  0,
+                                  ((curr - start) / (end - start)) * 100,
+                                ),
+                              );
+                              return (
+                                <Box
+                                  sx={{
+                                    width: `${prog}%`,
+                                    height: 1,
+                                    bgcolor: "white",
+                                  }}
+                                />
+                              );
+                            })()}
+                          </Box>
+                        )}
+                      </Stack>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </motion.div>
         )}
 
         {/* Animated Swipe Hint - Only show if schedule exists */}
@@ -943,7 +890,6 @@ const Dashboard = () => {
           {/* Elevated Spotlight Card */}
           {(() => {
             const pct = financialStats?.incomePercent || 0;
-            // Tier-based color & messaging system
             const getTier = (p) => {
               if (p >= 90)
                 return {
@@ -989,20 +935,44 @@ const Dashboard = () => {
 
             return (
               <Card
+                onClick={() => setIsHeroExpanded(!isHeroExpanded)}
                 sx={{
                   p: 3,
                   borderRadius: "28px",
                   bgcolor: mode === "light" ? "#fff" : "background.paper",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                  boxShadow: isHeroExpanded
+                    ? "0 20px 40px rgba(0,0,0,0.1)"
+                    : "0 4px 12px rgba(0,0,0,0.05)",
                   mb: 3,
                   position: "relative",
                   overflow: "hidden",
+                  cursor: "pointer",
                   border:
                     mode === "light"
                       ? "1px solid rgba(0,0,0,0.05)"
                       : "1px solid rgba(255,255,255,0.05)",
+                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "&:hover": {
+                    transform: isHeroExpanded ? "none" : "translateY(-4px)",
+                    boxShadow: "0 12px 24px rgba(0,0,0,0.08)",
+                  },
                 }}
               >
+                {/* Background Pattern - subtle when expanded */}
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: -100,
+                    right: -100,
+                    width: isHeroExpanded ? 400 : 200,
+                    height: isHeroExpanded ? 400 : 200,
+                    borderRadius: "50%",
+                    background: alpha(tier.barColor, 0.03),
+                    filter: "blur(60px)",
+                    transition: "all 0.6s ease",
+                  }}
+                />
+
                 <Box sx={{ position: "relative", zIndex: 1 }}>
                   <Stack
                     direction="row"
@@ -1018,21 +988,37 @@ const Dashboard = () => {
                         letterSpacing: "1px",
                       }}
                     >
-                      Monthly Expenditure
+                      {new Date().toLocaleString("default", { month: "long" })}{" "}
+                      Outflow
                     </Typography>
-                    <Chip
-                      label={tier.label}
-                      size="small"
-                      sx={{
-                        bgcolor: tier.chipBg,
-                        color: tier.chipColor,
-                        fontWeight: 800,
-                        height: 26,
-                        fontSize: "0.65rem",
-                        border: `1px solid ${alpha(tier.chipColor, 0.2)}`,
-                      }}
-                    />
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Chip
+                        label={tier.label}
+                        size="small"
+                        sx={{
+                          bgcolor: tier.chipBg,
+                          color: tier.chipColor,
+                          fontWeight: 800,
+                          height: 26,
+                          fontSize: "0.65rem",
+                          border: `1px solid ${alpha(tier.chipColor, 0.2)}`,
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          transform: isHeroExpanded
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 0.4s ease",
+                          display: "flex",
+                          color: "text.disabled",
+                        }}
+                      >
+                        <CaretDown size={18} weight="bold" />
+                      </Box>
+                    </Stack>
                   </Stack>
+
                   <Stack
                     direction="row"
                     alignItems="baseline"
@@ -1043,10 +1029,10 @@ const Dashboard = () => {
                       variant="h2"
                       sx={{
                         fontWeight: 800,
-                        fontSize: "3rem",
+                        fontSize: isHeroExpanded ? "3.5rem" : "3rem",
                         letterSpacing: "-2px",
                         color: tier.color,
-                        transition: "color 0.5s ease",
+                        transition: "all 0.4s ease",
                       }}
                     >
                       ₹{Math.round(financialStats?.spentThisMonth || 0)}
@@ -1058,68 +1044,169 @@ const Dashboard = () => {
                       / ₹{Math.round(financialStats?.totalIncome || 0)}
                     </Typography>
                   </Stack>
+
                   <Typography
                     variant="body2"
                     sx={{
                       color: pct >= 30 ? tier.color : "text.secondary",
                       fontWeight: pct >= 60 ? 700 : 500,
-                      mb: 3,
+                      mb: isHeroExpanded ? 4 : 3,
                       transition: "all 0.3s ease",
                     }}
                   >
                     {tier.message}
                   </Typography>
 
-                  <Box>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      sx={{ mb: 1 }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 500, color: "text.secondary" }}
-                      >
-                        Spending vs Income
-                      </Typography>
-                      <Typography
-                        variant="body2"
+                  {/* Expanded Analytics Section */}
+                  <Collapse in={isHeroExpanded} timeout={600}>
+                    <Box sx={{ mb: 4 }}>
+                      {/* Detailed Budget Utilization */}
+                      <Box
                         sx={{
-                          fontWeight: 700,
-                          color: tier.color,
-                          transition: "color 0.5s ease",
+                          bgcolor: alpha(tier.barColor, 0.05),
+                          p: 2.5,
+                          borderRadius: "24px",
+                          border: `1px solid ${alpha(tier.barColor, 0.1)}`,
                         }}
                       >
-                        {Math.round(pct)}%
-                      </Typography>
-                    </Stack>
-                    <Box
-                      sx={{
-                        height: 8,
-                        bgcolor: "action.hover",
-                        borderRadius: 4,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(pct, 100)}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                        style={{
-                          height: "100%",
-                          backgroundColor: tier.barColor,
-                          borderRadius: 4,
-                          transition: "background-color 0.5s ease",
-                        }}
-                      />
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          sx={{ mb: 1 }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 800, color: tier.color }}
+                          >
+                            BUDGET UTILIZATION
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 900, color: tier.color }}
+                          >
+                            {Math.round(pct)}%
+                          </Typography>
+                        </Stack>
+                        <LinearProgress
+                          variant="determinate"
+                          value={Math.min(100, pct)}
+                          sx={{
+                            height: 6,
+                            borderRadius: 3,
+                            bgcolor: alpha(tier.barColor, 0.1),
+                            "& .MuiLinearProgress-bar": {
+                              bgcolor: tier.barColor,
+                              borderRadius: 3,
+                            },
+                          }}
+                        />
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          sx={{ mt: 1.5 }}
+                        >
+                          <Box>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "text.secondary",
+                                fontWeight: 600,
+                                display: "block",
+                              }}
+                            >
+                              AVAILABLE
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 800 }}
+                            >
+                              ₹
+                              {Math.max(
+                                0,
+                                financialStats?.totalIncome -
+                                  financialStats?.spentThisMonth,
+                              ).toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: "right" }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "text.secondary",
+                                fontWeight: 600,
+                                display: "block",
+                              }}
+                            >
+                              LIMIT
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 800 }}
+                            >
+                              ₹
+                              {Math.round(
+                                financialStats?.totalIncome || 0,
+                              ).toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </Box>
                     </Box>
-                  </Box>
+                  </Collapse>
+
+                  {/* Standard Progress (Hidden when expanded to reduce clutter) */}
+                  {!isHeroExpanded && (
+                    <Box>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        sx={{ mb: 1 }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{ fontWeight: 500, color: "text.secondary" }}
+                        >
+                          Spending vs Income
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 700,
+                            color: tier.color,
+                            transition: "color 0.5s ease",
+                          }}
+                        >
+                          {Math.round(pct)}%
+                        </Typography>
+                      </Stack>
+                      <Box
+                        sx={{
+                          height: 8,
+                          bgcolor: "action.hover",
+                          borderRadius: 4,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(pct, 100)}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          style={{
+                            height: "100%",
+                            backgroundColor: tier.barColor,
+                            borderRadius: 4,
+                            transition: "background-color 0.5s ease",
+                          }}
+                        />
+                      </Box>
+                    </Box>
+                  )}
                 </Box>
               </Card>
             );
           })()}
 
-          {/* M3 Filled Cards Grid - Strict 2x2 */}
+          {/* M3 Filled Cards Grid - Smart Layout */}
           <Grid container spacing={2} sx={{ mb: 4 }}>
             {[
               {
@@ -1127,54 +1214,152 @@ const Dashboard = () => {
                 value: financialStats?.spentThisMonth,
                 color: "primary",
                 icon: <ArrowUpRight />,
+                path: "/analytics",
+                size: isSpentExpanded ? 12 : hasMaid() ? 6 : 12,
               },
+              ...(hasMaid()
+                ? [
+                    {
+                      label: "Maid Share",
+                      value: maidStats?.perPerson,
+                      color: "secondary",
+                      icon: <User />,
+                      path: "/settings/maid-attendance",
+                      size: isMaidExpanded ? 12 : isSpentExpanded ? 12 : 6,
+                    },
+                  ]
+                : []),
               {
-                label: "You Owe",
-                value: financialStats?.totalOwe,
-                color: "error",
-                icon: <ArrowDownLeft />,
-              },
-              {
-                label: "Owed to You",
-                value: financialStats?.totalOwed,
-                color: "success",
-                icon: <ArrowUpRight />,
-              },
-              {
-                label: "Maid Share",
-                value: maidStats?.perPerson,
-                color: "secondary",
-                icon: <User />,
+                label: "Settlements",
+                owe: financialStats?.totalOwe,
+                owed: financialStats?.totalOwed,
+                color: "grey",
+                icon: <Handshake />,
+                path: "/transactions",
+                size: 12,
               },
             ].map((item, i) => (
-              <Grid size={6} key={i}>
+              <Grid size={item.size} key={i}>
                 <Card
                   variant="filled"
+                  onClick={() => {
+                    if (item.label === "My Spent") {
+                      setIsSpentExpanded(!isSpentExpanded);
+                    } else if (item.label === "Maid Share") {
+                      setIsMaidExpanded(!isMaidExpanded);
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
                   sx={{
                     p: 2.5,
-                    borderRadius: "24px",
-                    bgcolor: `${item.color}.container`,
-                    color: `${item.color}.onContainer`,
+                    borderRadius: "28px",
+                    bgcolor:
+                      item.label === "Settlements"
+                        ? mode === "light"
+                          ? "#f5f5f7"
+                          : alpha(theme.palette.background.paper, 0.4)
+                        : mode === "light"
+                          ? item.color === "primary"
+                            ? "#004fcb"
+                            : item.color === "secondary"
+                              ? "#006684"
+                              : `${item.color}.main`
+                          : `${item.color}.container`,
+                    color:
+                      item.label === "Settlements"
+                        ? "text.primary"
+                        : mode === "light"
+                          ? "#fff"
+                          : `${item.color}.onContainer`,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     gap: 1.5,
-                    border:
-                      mode === "light"
-                        ? "1px solid rgba(0,0,0,0.02)"
-                        : "1px solid rgba(255,255,255,0.05)",
+                    cursor: "pointer",
+                    transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                    "&:active": { transform: "scale(0.96)" },
+                    "&:hover": {
+                      bgcolor:
+                        mode === "light"
+                          ? item.color === "primary"
+                            ? "#003ea1"
+                            : item.color === "secondary"
+                              ? "#004e66"
+                              : `${item.color}.dark`
+                          : `${item.color}.main`,
+                      color: "white",
+                      "& .item-icon-box": {
+                        bgcolor: "rgba(255,255,255,0.2)",
+                        color: "white",
+                      },
+                      "& .item-action-btn": {
+                        opacity: 1,
+                        transform: "translateX(0)",
+                      },
+                    },
+                    border: "none",
                     position: "relative",
                     overflow: "hidden",
+                    boxShadow:
+                      (item.label === "My Spent" && isSpentExpanded) ||
+                      (item.label === "Maid Share" && isMaidExpanded)
+                        ? `0 24px 48px ${alpha(mode === "light" ? "#000" : theme.palette[item.color].main, mode === "light" ? 0.2 : 0.3)}`
+                        : "none",
+                    border:
+                      item.label === "Settlements" && mode === "light"
+                        ? "1px solid rgba(0,0,0,0.05)"
+                        : "none",
                   }}
                 >
+                  {(item.label === "My Spent" ||
+                    item.label === "Maid Share" ||
+                    item.label === "Settlements") && (
+                    <IconButton
+                      size="small"
+                      className="item-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(item.path);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: 20,
+                        right: 20,
+                        bgcolor: alpha("#fff", 0.1),
+                        color: "inherit",
+                        opacity:
+                          (item.label === "My Spent" && isSpentExpanded) ||
+                          (item.label === "Maid Share" && isMaidExpanded) ||
+                          item.label === "Settlements"
+                            ? 1
+                            : 0,
+                        transform:
+                          (item.label === "My Spent" && isSpentExpanded) ||
+                          (item.label === "Maid Share" && isMaidExpanded) ||
+                          item.label === "Settlements"
+                            ? "translateX(0)"
+                            : "translateX(10px)",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <ArrowUpRight size={18} />
+                    </IconButton>
+                  )}
+
                   <Box
+                    className="item-icon-box"
                     sx={{
                       bgcolor: "background.paper",
                       p: 1,
                       borderRadius: "12px",
-                      color: `${item.color}.main`,
+                      color:
+                        item.label === "Settlements"
+                          ? "grey.500"
+                          : `${item.color}.main`,
                       display: "flex",
                       width: "fit-content",
+                      transition: "all 0.2s ease",
                       boxShadow:
                         mode === "light"
                           ? "0 2px 8px rgba(0,0,0,0.03)"
@@ -1186,7 +1371,7 @@ const Dashboard = () => {
                       weight: "duotone",
                     })}
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography
                       variant="caption"
                       sx={{
@@ -1200,12 +1385,441 @@ const Dashboard = () => {
                     >
                       {item.label.toUpperCase()}
                     </Typography>
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
                     >
-                      ₹{Math.round(item.value)}
-                    </Typography>
+                      <Typography
+                        variant="h5"
+                        sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
+                      >
+                        {item.label === "Settlements"
+                          ? `₹${Math.round((item.owed || 0) - (item.owe || 0))}`
+                          : `₹${Math.round(item.value)}`}
+                      </Typography>
+                      {(item.label === "My Spent" ||
+                        item.label === "Maid Share") && (
+                        <Box
+                          sx={{
+                            transform:
+                              (item.label === "My Spent" && isSpentExpanded) ||
+                              (item.label === "Maid Share" && isMaidExpanded)
+                                ? "rotate(180deg)"
+                                : "rotate(0deg)",
+                            transition: "transform 0.4s ease",
+                            display: "flex",
+                            opacity: 0.5,
+                          }}
+                        >
+                          <CaretDown size={14} weight="bold" />
+                        </Box>
+                      )}
+                    </Stack>
+
+                    {item.label === "Settlements" && (
+                      <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            p: 1.5,
+                            borderRadius: "16px",
+                            bgcolor:
+                              mode === "light"
+                                ? alpha(theme.palette.error.main, 0.08)
+                                : alpha(theme.palette.error.main, 0.12),
+                            color:
+                              mode === "light"
+                                ? theme.palette.error.dark
+                                : theme.palette.error.light,
+                            border: `1px solid ${alpha(theme.palette.error.main, 0.1)}`,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 800,
+                              opacity: 0.6,
+                              fontSize: "0.6rem",
+                              display: "block",
+                              mb: 0.5,
+                            }}
+                          >
+                            YOU OWE
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 900 }}>
+                            ₹{Math.round(item.owe || 0)}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            p: 1.5,
+                            borderRadius: "16px",
+                            bgcolor:
+                              mode === "light"
+                                ? alpha(theme.palette.success.main, 0.08)
+                                : alpha(theme.palette.success.main, 0.12),
+                            color:
+                              mode === "light"
+                                ? theme.palette.success.dark
+                                : theme.palette.success.light,
+                            border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 800,
+                              opacity: 0.6,
+                              fontSize: "0.6rem",
+                              display: "block",
+                              mb: 0.5,
+                            }}
+                          >
+                            OWED TO YOU
+                          </Typography>
+                          <Typography variant="body1" sx={{ fontWeight: 900 }}>
+                            ₹{Math.round(item.owed || 0)}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    )}
+
+                    {item.label === "My Spent" && (
+                      <Collapse in={isSpentExpanded} timeout={500}>
+                        <Box sx={{ mt: 3 }}>
+                          {/* Expense Flow Graph */}
+                          <Box sx={{ mb: 4, px: 0.5 }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 800,
+                                opacity: 0.6,
+                                letterSpacing: "0.5px",
+                                display: "block",
+                                mb: 2,
+                              }}
+                            >
+                              EXPENSE FLOW
+                            </Typography>
+                            <Stack
+                              direction="row"
+                              alignItems="flex-end"
+                              spacing={0.5}
+                              sx={{
+                                height: 80,
+                                mb: 1,
+                                display: "flex",
+                                alignItems: "flex-end",
+                              }}
+                            >
+                              {financialStats?.dailySpending?.map((val, d) => {
+                                const maxVal =
+                                  Math.max(...financialStats.dailySpending) ||
+                                  1;
+                                const height = (val / maxVal) * 100;
+                                return (
+                                  <motion.div
+                                    key={d}
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{
+                                      height: `${Math.max(height, 5)}%`,
+                                      opacity: 1,
+                                    }}
+                                    transition={{
+                                      delay: d * 0.02,
+                                      duration: 0.5,
+                                    }}
+                                    style={{
+                                      flex: 1,
+                                      backgroundColor:
+                                        val > 0
+                                          ? "rgba(255,255,255,0.6)"
+                                          : "rgba(255,255,255,0.15)",
+                                      borderRadius: "2px 2px 0 0",
+                                    }}
+                                  />
+                                );
+                              })}
+                            </Stack>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                opacity: 0.5,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ fontSize: "0.5rem" }}
+                              >
+                                Day 1
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{ fontSize: "0.5rem" }}
+                              >
+                                Day {financialStats?.dailySpending?.length}
+                              </Typography>
+                            </Box>
+                          </Box>
+
+                          {/* Split Summary */}
+                          <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
+                            <Box
+                              sx={{
+                                flex: 1,
+                                p: 1.5,
+                                borderRadius: "16px",
+                                bgcolor: "rgba(255,255,255,0.05)",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontWeight: 700,
+                                  opacity: 0.7,
+                                  fontSize: "0.6rem",
+                                  display: "block",
+                                  mb: 0.5,
+                                }}
+                              >
+                                SHARED
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 800 }}
+                              >
+                                ₹{Math.round(financialStats?.sharedSpent)}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                flex: 1,
+                                p: 1.5,
+                                borderRadius: "16px",
+                                bgcolor: "rgba(255,255,255,0.05)",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  fontWeight: 700,
+                                  opacity: 0.7,
+                                  fontSize: "0.6rem",
+                                  display: "block",
+                                  mb: 0.5,
+                                }}
+                              >
+                                PERSONAL
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 800 }}
+                              >
+                                ₹{Math.round(financialStats?.personalSpent)}
+                              </Typography>
+                            </Box>
+                          </Stack>
+
+                          {/* Mini Category Distribution */}
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 800,
+                              opacity: 0.6,
+                              letterSpacing: "0.5px",
+                              display: "block",
+                              mb: 1.5,
+                            }}
+                          >
+                            TOP CATEGORIES
+                          </Typography>
+                          <Stack spacing={1.5}>
+                            {Object.entries(
+                              financialStats?.categoryDistribution || {},
+                            )
+                              .sort((a, b) => b[1] - a[1])
+                              .slice(0, 3)
+                              .map(([cat, val]) => (
+                                <Box key={cat}>
+                                  <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    sx={{ mb: 0.5 }}
+                                  >
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontWeight: 700,
+                                        fontSize: "0.65rem",
+                                      }}
+                                    >
+                                      {cat.toUpperCase()}
+                                    </Typography>
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontWeight: 800,
+                                        fontSize: "0.65rem",
+                                      }}
+                                    >
+                                      {Math.round(
+                                        (val / (item.value || 1)) * 100,
+                                      )}
+                                      %
+                                    </Typography>
+                                  </Stack>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={(val / (item.value || 1)) * 100}
+                                    sx={{
+                                      height: 4,
+                                      borderRadius: 2,
+                                      bgcolor: alpha("#000", 0.05),
+                                      "& .MuiLinearProgress-bar": {
+                                        borderRadius: 2,
+                                        bgcolor: "currentColor",
+                                      },
+                                    }}
+                                  />
+                                </Box>
+                              ))}
+                          </Stack>
+                        </Box>
+                      </Collapse>
+                    )}
+                    {item.label === "Maid Share" && (
+                      <Collapse in={isMaidExpanded} timeout={500}>
+                        <Box sx={{ mt: 3 }}>
+                          {/* Attendance Stats */}
+                          <Box sx={{ mb: 4 }}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 800,
+                                opacity: 0.6,
+                                letterSpacing: "0.5px",
+                                display: "block",
+                                mb: 2,
+                              }}
+                            >
+                              ATTENDANCE SUMMARY
+                            </Typography>
+                            <Stack direction="row" spacing={2}>
+                              <Box
+                                sx={{
+                                  flex: 1,
+                                  p: 2,
+                                  borderRadius: "20px",
+                                  bgcolor: "rgba(255,255,255,0.05)",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <CheckCircle
+                                  size={24}
+                                  weight="duotone"
+                                  style={{ marginBottom: 8, opacity: 0.8 }}
+                                />
+                                <Typography
+                                  variant="h5"
+                                  sx={{ fontWeight: 800 }}
+                                >
+                                  {maidStats?.came}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ opacity: 0.6, fontWeight: 700 }}
+                                >
+                                  DAYS PRESENT
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  flex: 1,
+                                  p: 2,
+                                  borderRadius: "20px",
+                                  bgcolor: "rgba(255,255,255,0.05)",
+                                  textAlign: "center",
+                                }}
+                              >
+                                <Clock
+                                  size={24}
+                                  weight="duotone"
+                                  style={{ marginBottom: 8, opacity: 0.8 }}
+                                />
+                                <Typography
+                                  variant="h5"
+                                  sx={{ fontWeight: 800 }}
+                                >
+                                  {maidParams?.config?.rate}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ opacity: 0.6, fontWeight: 700 }}
+                                >
+                                  MONTHLY RATE
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Box>
+
+                          {/* Salary Split Info */}
+                          <Box
+                            sx={{
+                              p: 2.5,
+                              borderRadius: "20px",
+                              bgcolor: "rgba(255,255,255,0.08)",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                            }}
+                          >
+                            <Stack
+                              direction="row"
+                              justifyContent="space-between"
+                              alignItems="center"
+                            >
+                              <Box>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 800,
+                                    opacity: 0.6,
+                                    display: "block",
+                                  }}
+                                >
+                                  SPLIT BETWEEN
+                                </Typography>
+                                <Typography
+                                  variant="body1"
+                                  sx={{ fontWeight: 800 }}
+                                >
+                                  {maidParams?.config?.split} members
+                                </Typography>
+                              </Box>
+                              <Box sx={{ textAlign: "right" }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 800,
+                                    opacity: 0.6,
+                                    display: "block",
+                                  }}
+                                >
+                                  YOUR SHARE
+                                </Typography>
+                                <Typography
+                                  variant="h6"
+                                  sx={{ fontWeight: 900 }}
+                                >
+                                  ₹{item.value}
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </Box>
+                        </Box>
+                      </Collapse>
+                    )}
                   </Box>
                 </Card>
               </Grid>
@@ -1217,21 +1831,40 @@ const Dashboard = () => {
               direction="row"
               justifyContent="space-between"
               alignItems="center"
-              sx={{ mb: 2.5 }}
+              sx={{ mb: 3 }}
             >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, letterSpacing: "-0.5px" }}
-              >
-                Recent Activity
-              </Typography>
+              <Box>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 800, letterSpacing: "-0.5px" }}
+                >
+                  Recent Activity
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "text.secondary",
+                    fontWeight: 700,
+                    opacity: 0.7,
+                  }}
+                >
+                  Your latest financial movements
+                </Typography>
+              </Box>
               <Button
+                variant="soft"
                 size="small"
                 onClick={() => navigate("/transactions")}
                 sx={{
-                  borderRadius: "20px",
+                  borderRadius: "14px",
                   textTransform: "none",
-                  fontWeight: 700,
+                  fontWeight: 800,
+                  bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  color: "primary.main",
+                  px: 2,
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.primary.main, 0.15),
+                  },
                 }}
               >
                 View History
@@ -1239,82 +1872,172 @@ const Dashboard = () => {
             </Stack>
 
             <Stack spacing={1.5}>
-              {financialStats?.recentActivity?.map((t, idx) => (
-                <Card
-                  key={idx}
-                  variant="outlined"
-                  sx={{
-                    p: 2,
-                    borderRadius: "20px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                    border: `1px solid ${theme.palette.divider}`,
-                    bgcolor: "transparent",
-                    "&:hover": { bgcolor: "action.hover" },
-                  }}
-                >
-                  <Avatar
+              {financialStats?.recentActivity?.map((t, idx) => {
+                const isMyExpense = t.user_id === user?.id;
+                let split = [];
+                try {
+                  split =
+                    typeof t.split_between === "string"
+                      ? JSON.parse(t.split_between)
+                      : t.split_between || [];
+                } catch (e) {}
+
+                const isSettlement =
+                  t.category === "settle" ||
+                  t.description?.toLowerCase().includes("settle");
+                const isPersonal =
+                  !isSettlement &&
+                  split.length === 1 &&
+                  parseInt(split[0]) === parseInt(t.user_id);
+                const isShared = !isSettlement && !isPersonal;
+
+                let tag = "Shared";
+                let tagColor = theme.palette.primary.main;
+                if (isSettlement) {
+                  tag = "Settlement";
+                  tagColor = theme.palette.success.main;
+                } else if (isPersonal) {
+                  tag = "Personal";
+                  tagColor = theme.palette.info.main;
+                }
+
+                return (
+                  <Card
+                    key={idx}
+                    elevation={0}
+                    onClick={() =>
+                      navigate("/transactions", {
+                        state: { transactionId: t.id },
+                      })
+                    }
                     sx={{
-                      width: 44,
-                      height: 44,
+                      p: 2,
+                      borderRadius: "24px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
                       bgcolor:
-                        t.user_id === user?.id
-                          ? "primary.container"
-                          : mode === "light"
-                            ? "#f0f0f0"
-                            : "rgba(255,255,255,0.05)",
-                      color:
-                        t.user_id === user?.id
-                          ? "primary.onContainer"
-                          : "text.primary",
+                        mode === "light"
+                          ? "background.paper"
+                          : alpha(theme.palette.background.paper, 0.4),
+                      border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                      cursor: "pointer",
+                      transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&:hover": {
+                        bgcolor:
+                          mode === "light"
+                            ? alpha(theme.palette.primary.main, 0.02)
+                            : alpha(theme.palette.primary.main, 0.05),
+                        borderColor: alpha(theme.palette.primary.main, 0.1),
+                        transform: "translateX(4px)",
+                      },
                     }}
                   >
-                    <Wallet weight="duotone" />
-                  </Avatar>
-
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="body1"
-                      sx={{ fontWeight: 700, fontSize: "0.95rem" }}
-                    >
-                      {t.description || "General Expense"}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary", fontWeight: 600 }}
-                    >
-                      {t.user_id === user?.id ? "You" : t.user_name} •{" "}
-                      {new Date(t.created_at).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ textAlign: "right" }}>
-                    <Typography
-                      variant="body1"
+                    <Box
                       sx={{
-                        fontWeight: 800,
-                        color:
-                          t.user_id === user?.id
-                            ? "error.main"
-                            : "success.main",
+                        width: 48,
+                        height: 48,
+                        borderRadius: "16px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: isSettlement
+                          ? alpha(theme.palette.success.main, 0.1)
+                          : isPersonal
+                            ? alpha(theme.palette.info.main, 0.1)
+                            : alpha(theme.palette.primary.main, 0.1),
+                        color: isSettlement
+                          ? "success.main"
+                          : isPersonal
+                            ? "info.main"
+                            : "primary.main",
                       }}
                     >
-                      {t.user_id === user?.id ? "-" : "+"}₹
-                      {Math.round(t.amount)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "text.secondary", fontWeight: 700 }}
-                    >
-                      {t.category || "Shared"}
-                    </Typography>
-                  </Box>
-                </Card>
-              ))}
+                      {isSettlement ? (
+                        <Handshake size={24} weight="duotone" />
+                      ) : (
+                        <Receipt size={24} weight="duotone" />
+                      )}
+                    </Box>
+
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{ fontWeight: 800, fontSize: "0.95rem", mb: 0.2 }}
+                      >
+                        {t.description || "General Expense"}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontWeight: 700,
+                            opacity: 0.6,
+                          }}
+                        >
+                          {new Date(t.created_at).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
+                        </Typography>
+                        <Box
+                          sx={{
+                            width: 3,
+                            height: 3,
+                            borderRadius: "50%",
+                            bgcolor: "text.disabled",
+                          }}
+                        />
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "text.secondary",
+                            fontWeight: 700,
+                            opacity: 0.8,
+                          }}
+                        >
+                          {isMyExpense
+                            ? "Paid by You"
+                            : `Paid by ${t.user_name?.split(" ")[0]}`}
+                        </Typography>
+                      </Stack>
+                    </Box>
+
+                    <Box sx={{ textAlign: "right" }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 900,
+                          fontSize: "1rem",
+                          color: isMyExpense ? "error.main" : "success.main",
+                          mb: 0.5,
+                        }}
+                      >
+                        {isMyExpense ? "-" : "+"}₹{Math.round(t.amount)}
+                      </Typography>
+                      <Chip
+                        label={tag}
+                        size="small"
+                        sx={{
+                          height: 20,
+                          fontSize: "0.6rem",
+                          fontWeight: 900,
+                          bgcolor: alpha(tagColor, 0.1),
+                          color: tagColor,
+                          border: `1px solid ${alpha(tagColor, 0.1)}`,
+                          borderRadius: "6px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                        }}
+                      />
+                    </Box>
+                  </Card>
+                );
+              })}
             </Stack>
           </Box>
         </motion.div>

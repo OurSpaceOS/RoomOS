@@ -9,6 +9,8 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import {
   House,
@@ -27,6 +29,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import useSettingsStore from "../store/settingsStore";
 
 const Layout = ({ children }) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const { settings, getJsonSetting } = useSettingsStore();
@@ -188,12 +191,13 @@ const Layout = ({ children }) => {
               bottom: 0,
               left: 0,
               right: 0,
-              borderRadius: "28px 28px 0 0",
-              boxShadow: "0 -10px 40px rgba(0,0,0,0.06)",
+              borderRadius: "32px 32px 0 0",
+              boxShadow: "0 -15px 50px rgba(0,0,0,0.08)",
               overflow: "hidden",
               zIndex: 1000,
-              bgcolor: "background.paper",
-              borderTop: "1px solid rgba(0,0,0,0.05)",
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
+              backdropFilter: "blur(10px)",
+              border: "none",
             }}
             elevation={0}
           >
@@ -208,17 +212,22 @@ const Layout = ({ children }) => {
                 }
               }}
               sx={{
-                height: 62,
+                height: 72,
+                bgcolor: "transparent",
                 "& .MuiBottomNavigationAction-root": {
                   color: "text.secondary",
                   minWidth: 0,
-                  transition: "all 0.2s",
-                  "&:hover": { color: "primary.main" },
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  "& .MuiBottomNavigationAction-iconOnly": {
+                    paddingTop: 0,
+                  },
                 },
                 "& .Mui-selected": {
                   color: "primary.main",
-                  "& .MuiBottomNavigationAction-label": {
-                    fontWeight: 800,
+                  transform: "translateY(-2px)",
+                  "& .indicator-pill": {
+                    width: 54,
+                    opacity: 1,
                   },
                 },
               }}
@@ -227,10 +236,32 @@ const Layout = ({ children }) => {
                 <BottomNavigationAction
                   key={tab.id}
                   icon={
-                    <tab.icon
-                      size={24}
-                      weight={activeTabIndex === idx ? "fill" : "regular"}
-                    />
+                    <Box
+                      sx={{
+                        position: "relative",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Box
+                        className="indicator-pill"
+                        sx={{
+                          position: "absolute",
+                          width: 0,
+                          height: 32,
+                          borderRadius: "16px",
+                          bgcolor: alpha(theme.palette.primary.main, 0.12),
+                          opacity: 0,
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          zIndex: -1,
+                        }}
+                      />
+                      <tab.icon
+                        size={24}
+                        weight={activeTabIndex === idx ? "fill" : "regular"}
+                      />
+                    </Box>
                   }
                 />
               ))}
@@ -239,10 +270,32 @@ const Layout = ({ children }) => {
                 <BottomNavigationAction
                   key="more"
                   icon={
-                    <SquaresFour
-                      size={24}
-                      weight={activeTabIndex === 4 ? "fill" : "regular"}
-                    />
+                    <Box
+                      sx={{
+                        position: "relative",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Box
+                        className="indicator-pill"
+                        sx={{
+                          position: "absolute",
+                          width: 0,
+                          height: 32,
+                          borderRadius: "16px",
+                          bgcolor: alpha(theme.palette.primary.main, 0.12),
+                          opacity: 0,
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                          zIndex: -1,
+                        }}
+                      />
+                      <SquaresFour
+                        size={24}
+                        weight={activeTabIndex === 4 ? "fill" : "regular"}
+                      />
+                    </Box>
                   }
                 />
               )}
@@ -256,23 +309,31 @@ const Layout = ({ children }) => {
             onClose={handleCloseMenu}
             onClick={handleCloseMenu}
             PaperProps={{
-              elevation: 5,
+              elevation: 0,
               sx: {
-                borderRadius: "20px",
+                borderRadius: "28px",
                 mb: 2,
-                minWidth: 160,
+                minWidth: 180,
+                p: 1,
                 overflow: "visible",
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: (theme) =>
+                  `0 10px 40px ${alpha(theme.palette.common.black, 0.12)}`,
                 "&:before": {
                   content: '""',
                   display: "block",
                   position: "absolute",
-                  bottom: -10,
-                  right: 28,
-                  width: 10,
-                  height: 10,
-                  bgcolor: "background.paper",
-                  transform: "translateY(-50%) rotate(45deg)",
-                  zIndex: 0,
+                  bottom: -6,
+                  right: 24,
+                  width: 12,
+                  height: 12,
+                  bgcolor: "inherit",
+                  borderRight: "1px solid",
+                  borderBottom: "1px solid",
+                  borderColor: "inherit",
+                  transform: "rotate(45deg)",
                 },
               },
             }}
@@ -284,17 +345,20 @@ const Layout = ({ children }) => {
                 key={tab.id}
                 onClick={() => handleNavigate(tab.path)}
                 sx={{
-                  py: 1.5,
+                  py: 1.8,
                   px: 2,
-                  borderRadius: "12px",
-                  mx: 1,
-                  my: 0.5,
+                  borderRadius: "16px",
+                  mx: 0.5,
+                  mb: 0.5,
                   color: location.pathname.includes(tab.path)
                     ? "primary.main"
                     : "text.primary",
                   bgcolor: location.pathname.includes(tab.path)
-                    ? "rgba(99, 102, 241, 0.08)"
+                    ? alpha(theme.palette.primary.main, 0.08)
                     : "transparent",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.primary.main, 0.04),
+                  },
                 }}
               >
                 <ListItemIcon
