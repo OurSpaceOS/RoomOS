@@ -1298,7 +1298,6 @@ const Dashboard = () => {
                         transform: "translateX(0)",
                       },
                     },
-                    border: "none",
                     position: "relative",
                     overflow: "hidden",
                     boxShadow:

@@ -148,12 +148,12 @@ const Login = () => {
                         <Box 
                             component="img" 
                             src="/logo.png" 
-                            alt="OurSpaceOS" 
+                            alt="RoomOS" 
                             sx={{ height: '100%', width: '100%', objectFit: 'contain' }} 
                         />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'text.primary', fontSize: '1.6rem' }}>
-                        OurSpaceOS
+                        RoomOS
                     </Typography>
                 </Box>
                 <IconButton 
@@ -336,7 +336,7 @@ const Login = () => {
                             }}
                         />
 
-                        {isLogin && (
+                        {/* {isLogin && (
                             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
                                 <Link 
                                     href="#" 
@@ -346,7 +346,7 @@ const Login = () => {
                                     Forgot Password?
                                 </Link>
                             </Box>
-                        )}
+                        )} */}
 
                         <Box sx={{ mt: 6 }}>
                              <Button
@@ -401,9 +401,12 @@ const Login = () => {
                     </Box>
                 </motion.div>
 
-                <Box sx={{ mt: 'auto', textAlign: 'center', opacity: 0.5 }}>
+                <Box sx={{ mt: 'auto', textAlign: 'center', opacity: 0.8 }}>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.5px' }}>
-                        © OurSpaceOS
+                        © OurSpaceOS v3.2.5
+                    </Typography> <br />
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.5px' }}>
+                        Made with ❤️ by Sumit
                     </Typography>
                 </Box>
             </Container>

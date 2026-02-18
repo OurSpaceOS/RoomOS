@@ -304,59 +304,6 @@ const CommandCenter = ({ stats, status, periodLabel }) => {
             />
           </Box>
         </Box>
-
-        <Box
-          sx={{
-            bgcolor: "rgba(0,0,0,0.1)",
-            p: 2,
-            borderRadius: "20px",
-            border: "1px solid rgba(255,255,255,0.1)",
-          }}
-        >
-          <Stack direction="row" justifyContent="space-between" sx={{ mb: 1 }}>
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: 800, opacity: 0.8 }}
-            >
-              BUDGET UTILIZATION
-            </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 900 }}>
-              {stats.budgetPercent.toFixed(0)}%
-            </Typography>
-          </Stack>
-          <LinearProgress
-            variant="determinate"
-            value={Math.min(100, stats.budgetPercent)}
-            sx={{
-              height: 6,
-              borderRadius: 3,
-              bgcolor: "rgba(255,255,255,0.2)",
-              "& .MuiLinearProgress-bar": {
-                bgcolor: "#fff",
-                borderRadius: 3,
-                boxShadow: "0 0 10px rgba(255,255,255,0.5)",
-              },
-            }}
-          />
-          <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: 700, fontSize: "0.65rem", opacity: 0.9 }}
-            >
-              Available: ₹
-              {Math.max(
-                0,
-                stats.monthlyBudget - stats.activeSpent,
-              ).toLocaleString()}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{ fontWeight: 700, fontSize: "0.65rem", opacity: 0.9 }}
-            >
-              Limit: ₹{stats.monthlyBudget.toLocaleString()}
-            </Typography>
-          </Stack>
-        </Box>
       </Stack>
     </Paper>
   );
@@ -904,17 +851,17 @@ const Analytics = () => {
     const activeMonthData =
       selectedMonth === "all"
         ? {
-          shared: totalShared,
-          personal: totalPersonal,
-          total: totalShared + totalPersonal,
-          transactions: myTransactions,
-        }
+            shared: totalShared,
+            personal: totalPersonal,
+            total: totalShared + totalPersonal,
+            transactions: myTransactions,
+          }
         : monthlyData[selectedMonth] || {
-          shared: 0,
-          personal: 0,
-          total: 0,
-          transactions: [],
-        };
+            shared: 0,
+            personal: 0,
+            total: 0,
+            transactions: [],
+          };
 
     const activeSharedCount = activeMonthData.transactions.filter(
       (t) => !t.isPersonal,
@@ -946,10 +893,10 @@ const Analytics = () => {
     const budgetPercent =
       monthlyBudget > 0
         ? (activeSpent /
-          (selectedMonth === "all"
-            ? monthlyBudget * sortedMonths.length
-            : monthlyBudget)) *
-        100
+            (selectedMonth === "all"
+              ? monthlyBudget * sortedMonths.length
+              : monthlyBudget)) *
+          100
         : 0;
 
     return {
@@ -1125,8 +1072,8 @@ const Analytics = () => {
                 selectedMonth === "all"
                   ? "TOTAL"
                   : stats.monthlyData[selectedMonth]?.label
-                    .split(" ")[0]
-                    .toUpperCase()
+                      .split(" ")[0]
+                      .toUpperCase()
               }
             />
 

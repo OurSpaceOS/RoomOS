@@ -1,0 +1,12 @@
+node_modules
+target
+build
+dist
+.DS_Store
+*.apk
+*.aab
+*.keystore
+release
+.idea
+.vscode
+.idsig
