@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initMagneticButtons();
     initScreenshotLightbox();
     initInteractiveShowcase();
+    initPolicyModals();
 });
 
 /**
@@ -24,6 +25,30 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initInteractiveShowcase() {
     const blocks = document.querySelectorAll('.feature-block');
+    const demoFrame = document.querySelector('.demo-phone-frame');
+    
+    // Scale iframe to fit inside mobile container
+    if (demoFrame) {
+        const calculateScale = () => {
+            const frameWidth = demoFrame.clientWidth - 12; // 6px left + 6px right padding
+            const frameHeight = demoFrame.clientHeight - 12; // 6px top + 6px bottom padding
+            
+            // We scale based on whichever dimension is the limiting factor to fit perfectly
+            const scaleX = frameWidth / 400; // 400px is the fixed CSS width
+            const scaleY = frameHeight / (400 * (20/9)); // 20/9 aspect ratio height
+            
+            const scale = Math.min(scaleX, scaleY);
+            demoFrame.style.setProperty('--iframe-scale', scale);
+        };
+        
+        // Recalculate on any resize of the frame (including browser zooms)
+        const resizeObserver = new ResizeObserver(() => {
+            calculateScale();
+        });
+        
+        resizeObserver.observe(demoFrame);
+    }
+
     if (blocks.length === 0) return;
 
     // Listen for route changes from the iframe
@@ -52,6 +77,21 @@ function initInteractiveShowcase() {
             }
         }
     });
+
+    // Real-time clock for the demo phone status bar
+    const timeElement = document.querySelector('.demo-time');
+    if (timeElement) {
+        const updateTime = () => {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            // Format to 12-hour or 24-hour? Usually phones use user preference, let's stick to simple HH:MM
+            timeElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        };
+        // Set immediately, then update every minute
+        updateTime();
+        setInterval(updateTime, 60000);
+    }
 }
 
 /**
@@ -524,4 +564,62 @@ function initScreenshotLightbox() {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
+}
+
+// Policy & Terms Modals
+function initPolicyModals() {
+    const modal = document.getElementById('policyModal');
+    const privacyLink = document.getElementById('privacyLink');
+    const termsLink = document.getElementById('termsLink');
+    const closeBtn = document.getElementById('closePolicyModal');
+    const closeBtnFooter = document.getElementById('policyCloseBtn');
+    const privacyContent = document.getElementById('privacyContent');
+    const termsContent = document.getElementById('termsContent');
+
+    if (!modal) return;
+
+    const openModal = (type) => {
+        // Switch content
+        if (type === 'privacy') {
+            privacyContent.style.display = 'block';
+            termsContent.style.display = 'none';
+        } else {
+            privacyContent.style.display = 'none';
+            termsContent.style.display = 'block';
+        }
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Stop background scroll
+    };
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        document.body.style.overflow = ''; // Restore scroll
+    };
+
+    // Event Listeners
+    privacyLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openModal('privacy');
+    });
+
+    termsLink?.addEventListener('click', (e) => {
+        e.preventDefault();
+        openModal('terms');
+    });
+
+    closeBtn?.addEventListener('click', closeModal);
+    closeBtnFooter?.addEventListener('click', closeModal);
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
 }
