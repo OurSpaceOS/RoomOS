@@ -124,6 +124,8 @@
 
 .dark-mode .showcase-highlights li {
     color: var(--gray-400);
+    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.05);
 }
 
 .dark-mode .showcase-highlights i {
@@ -1594,6 +1596,7 @@ select {
     }
 
     .feature-block {
+        display: block;
         opacity: 1;
         transform: none;
         padding: 24px;
@@ -1854,6 +1857,11 @@ select {
 
     .hero.hero-dark .hero-subtitle {
         font-size: 1.05rem;
+    }
+
+    .hero-glass-panel {
+        padding: 40px 24px;
+        border-radius: 32px;
     }
 
     /* Hide bento cards on mobile for clean look */
