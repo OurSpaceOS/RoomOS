@@ -1,22 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { 
-  Box, 
-  Button, 
-  Container, 
-  TextField, 
-  Typography, 
-  Alert,
-  CircularProgress,
-  Link,
-  useTheme,
-  IconButton,
-  InputAdornment,
+import {
+    Box,
+    Button,
+    Container,
+    TextField,
+    Typography,
+    Alert,
+    CircularProgress,
+    Link,
+    useTheme,
+    IconButton,
+    InputAdornment,
 } from '@mui/material';
-import { 
-    Sun, 
-    Moon, 
+import {
+    Sun,
+    Moon,
     ArrowRight,
     CaretLeft,
     Eye,
@@ -41,9 +41,27 @@ const Login = () => {
     const theme = useTheme();
 
     // Basic Validation
-    const isFormValid = isLogin 
+    const isFormValid = isLogin
         ? (credentials.email.trim() !== '' && credentials.password.trim() !== '')
         : (credentials.name.trim() !== '' && credentials.email.trim() !== '' && credentials.password.trim() !== '');
+
+    // Demo Mode Auto-Login
+    useEffect(() => {
+        const queryParams = new URLSearchParams(window.location.search);
+        if (queryParams.get('demo') === 'true') {
+            sessionStorage.setItem('demoMode', 'true');
+            // Auto trigger login with demo credentials
+            const demoCreds = {
+                email: 'adityasingh3mau@gmail.com',
+                password: '112233'
+            };
+            setCredentials(demoCreds);
+            // We use a short timeout to ensure state/mutation is ready
+            setTimeout(() => {
+                authMutation.mutate(demoCreds);
+            }, 500);
+        }
+    }, []);
 
     // Auth Mutation
     const authMutation = useMutation({
@@ -60,14 +78,14 @@ const Login = () => {
             if (isLogin) {
                 setToken(data.token);
                 setGroup(data.group);
-                setUser({ 
-                    id: data.user.id, 
-                    name: data.user.name, 
-                    role: data.user.role, 
-                    group_id: data.user.group_id 
+                setUser({
+                    id: data.user.id,
+                    name: data.user.name,
+                    role: data.user.role,
+                    group_id: data.user.group_id
                 });
                 toast.success(`Welcome back, ${data.user.name.split(' ')[0]}!`);
-                navigate('/dashboard'); 
+                navigate('/dashboard');
             } else {
                 // After registration, toggle back to login
                 setIsLogin(true);
@@ -94,11 +112,11 @@ const Login = () => {
     };
 
     return (
-        <Box sx={{ 
-            minHeight: '100vh', 
+        <Box sx={{
+            minHeight: '100vh',
             bgcolor: 'background.default',
-            background: mode === 'light' 
-                ? 'linear-gradient(135deg, #EBF4FF 0%, #F3E8FF 100%)' 
+            background: mode === 'light'
+                ? 'linear-gradient(135deg, #EBF4FF 0%, #F3E8FF 100%)'
                 : 'linear-gradient(135deg, #0A0C10 0%, #111827 100%)',
             display: 'flex',
             flexDirection: 'column',
@@ -107,14 +125,14 @@ const Login = () => {
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
             {/* Ambient Background Glows */}
-            <Box sx={{ 
-                position: 'absolute', 
-                top: '-15%', 
-                right: '-10%', 
-                width: '60%', 
-                height: '50%', 
-                background: mode === 'light' 
-                    ? 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)' 
+            <Box sx={{
+                position: 'absolute',
+                top: '-15%',
+                right: '-10%',
+                width: '60%',
+                height: '50%',
+                background: mode === 'light'
+                    ? 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)'
                     : 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%)',
                 zIndex: 0,
                 borderRadius: '50%',
@@ -122,19 +140,19 @@ const Login = () => {
             }} />
 
             {/* Header / Top Bar */}
-            <Box sx={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center', 
-                px: { xs: 3, sm: 4 }, 
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                px: { xs: 3, sm: 4 },
                 py: 4,
-                zIndex: 10 
+                zIndex: 10
             }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box 
-                        sx={{ 
-                            width: 52, 
-                            height: 52, 
+                    <Box
+                        sx={{
+                            width: 52,
+                            height: 52,
                             bgcolor: 'white',
                             borderRadius: '14px',
                             display: 'flex',
@@ -145,20 +163,20 @@ const Login = () => {
                             overflow: 'hidden'
                         }}
                     >
-                        <Box 
-                            component="img" 
-                            src="/logo.png" 
-                            alt="OurSpaceOS" 
-                            sx={{ height: '100%', width: '100%', objectFit: 'contain' }} 
+                        <Box
+                            component="img"
+                            src="/logo.png"
+                            alt="OurSpaceOS"
+                            sx={{ height: '100%', width: '100%', objectFit: 'contain' }}
                         />
                     </Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.5px', color: 'text.primary', fontSize: '1.6rem' }}>
                         OurSpaceOS
                     </Typography>
                 </Box>
-                <IconButton 
-                    onClick={toggleTheme} 
-                    sx={{ 
+                <IconButton
+                    onClick={toggleTheme}
+                    sx={{
                         color: mode === 'dark' ? '#FFD60A' : '#1D1D1F',
                         bgcolor: mode === 'light' ? 'white' : 'rgba(255,255,255,0.08)',
                         width: 48,
@@ -172,11 +190,11 @@ const Login = () => {
                 </IconButton>
             </Box>
 
-            <Container 
+            <Container
                 maxWidth="sm"
-                sx={{ 
-                    flex: 1, 
-                    display: 'flex', 
+                sx={{
+                    flex: 1,
+                    display: 'flex',
                     flexDirection: 'column',
                     px: { xs: 4, sm: 6 },
                     pb: 6,
@@ -190,9 +208,9 @@ const Login = () => {
                     transition={{ duration: 0.8 }}
                 >
                     <Box sx={{ mb: 4, mt: 2 }}>
-                        <Typography variant="h3" sx={{ 
-                            fontWeight: 700, 
-                            color: 'text.primary', 
+                        <Typography variant="h3" sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
                             fontSize: { xs: '2.8rem', sm: '3.5rem' },
                             letterSpacing: '-1.5px',
                             mb: 1
@@ -220,12 +238,12 @@ const Login = () => {
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
                                 >
-                                    <Alert 
-                                        severity="error" 
-                                        variant="filled" 
-                                        sx={{ 
-                                            mb: 3, 
-                                            borderRadius: 3, 
+                                    <Alert
+                                        severity="error"
+                                        variant="filled"
+                                        sx={{
+                                            mb: 3,
+                                            borderRadius: 3,
                                             bgcolor: mode === 'light' ? '#fee2e2' : '#7f1d1d',
                                             color: mode === 'light' ? '#991b1b' : '#fecaca',
                                             border: 'none',
@@ -254,7 +272,7 @@ const Login = () => {
                                     value={credentials.name}
                                     onChange={handleChange}
                                     variant="outlined"
-                                    sx={{ 
+                                    sx={{
                                         '& .MuiOutlinedInput-root': {
                                             borderRadius: '16px',
                                             bgcolor: mode === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.05)',
@@ -286,7 +304,7 @@ const Login = () => {
                                     </InputAdornment>
                                 ),
                             }}
-                            sx={{ 
+                            sx={{
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '16px',
                                     bgcolor: mode === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.05)',
@@ -323,7 +341,7 @@ const Login = () => {
                                     </InputAdornment>
                                 ),
                             }}
-                            sx={{ 
+                            sx={{
                                 mt: 2,
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: '16px',
@@ -338,9 +356,9 @@ const Login = () => {
 
                         {isLogin && (
                             <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                                <Link 
-                                    href="#" 
-                                    variant="body2" 
+                                <Link
+                                    href="#"
+                                    variant="body2"
                                     sx={{ fontWeight: 700, textDecoration: 'none', color: 'primary.main' }}
                                 >
                                     Forgot Password?
@@ -349,13 +367,13 @@ const Login = () => {
                         )}
 
                         <Box sx={{ mt: 6 }}>
-                             <Button
+                            <Button
                                 type="submit"
                                 variant="contained"
                                 fullWidth
                                 disabled={authMutation.isPending || !isFormValid}
                                 endIcon={!authMutation.isPending && <ArrowRight size={22} weight="bold" />}
-                                sx={{ 
+                                sx={{
                                     py: 2.2,
                                     borderRadius: '18px',
                                     fontSize: '1.1rem',
@@ -378,10 +396,10 @@ const Login = () => {
                         </Box>
 
                         <Box sx={{ mt: 2 }}>
-                             <Button
+                            <Button
                                 fullWidth
                                 onClick={toggleAuthMode}
-                                sx={{ 
+                                sx={{
                                     py: 1.5,
                                     borderRadius: '16px',
                                     fontSize: '1rem',

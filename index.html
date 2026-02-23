@@ -4,210 +4,654 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RoomOS | Shared Living, Simplified</title>
     <meta name="description"
-        content="The all-in-one platform for effortless roommate coordination. Track expenses, chores, and sync everything offline-first.">
+        content="RoomOS - The all-in-one platform for effortless roommate coordination. Track expenses, chores, and sync everything offline-first.">
+    <meta name="keywords"
+        content="roommate app, split bills, chore tracker, maid attendance, house chat, shared living">
+    <title>RoomOS | Shared Living, Reimagined</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
-    <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="landing.css">
+    <!-- Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="landing.css">
 </head>
 
 <body>
-    <!-- Immersive Background -->
-    <!-- Immersive Background -->
-    <!-- Replaced by particles.js canvas -->
-
     <!-- Navigation -->
-    <nav class="main-nav">
-        <div class="container nav-wrap">
-            <a href="index.html" class="brand">
-                <i class="ph-fill ph-house-line"></i>
-                <span>RoomOS</span>
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <i class="ph-fill ph-house-line logo-icon"></i>
+                RoomOS
             </a>
-            <div class="nav-links" id="nav-links">
-                <a href="#features">Features</a>
-                <a href="#demo">Showcase</a>
-                <a href="changelog.html">Changelog</a>
-                <a href="download.html">Download APK</a>
-                <button id="theme-toggle" class="theme-toggle-btn">
-                    <i class="ph ph-sun"></i>
-                </button>
-                <a href="web/index.html" class="btn-nav">Launch App</a>
-            </div>
-            <button class="menu-toggle" id="menu-toggle">
-                <i class="ph ph-list"></i>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#modules">Modules</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="changelog.html">Changelog</a></li>
+                <li><a href="download.html">Download</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <a href="web/index.html" class="btn btn-ghost">Login</a>
+                <a href="web/index.html" class="btn btn-primary">Launch App</a>
+            </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <header class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1>Shared Living.<br><span>Reimagined.</span></h1>
-                <p>The operating system your home deserves. Automate chores, split finances instantly, and sync your
-                    household seamlessly.</p>
-
-                <div class="cta-group">
-                    <button class="btn-primary" onclick="window.location.href='web/index.html'">
-                        Start for Free <i class="ph-bold ph-arrow-right"></i>
-                    </button>
-                    <input type="email" class="hero-input" placeholder="Enter your email for updates..."
-                        aria-label="Email">
+    <section class="hero hero-dark" id="home">
+        <!-- Floating Bento Cards (Background) -->
+        <div class="bento-cards" aria-hidden="true">
+            <!-- Expense Tracker Card -->
+            <div class="bento-card bento-card-1" data-speed="0.3">
+                <div class="bento-card-inner glass-card">
+                    <div class="bento-header">
+                        <i class="ph-fill ph-wallet"></i>
+                        <span>Expense Tracker</span>
+                    </div>
+                    <div class="bento-amount">₹12,400</div>
+                    <div class="bento-label">this month</div>
+                    <div class="bento-chart">
+                        <div class="chart-bar" style="height: 40%"></div>
+                        <div class="chart-bar" style="height: 65%"></div>
+                        <div class="chart-bar" style="height: 50%"></div>
+                        <div class="chart-bar active" style="height: 85%"></div>
+                        <div class="chart-bar" style="height: 30%"></div>
+                        <div class="chart-bar" style="height: 55%"></div>
+                        <div class="chart-bar" style="height: 70%"></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="mockup-container">
-                <img src="img/dashdark.png" data-img-dark="img/dashdark.png" data-img-light="img/dashboard.png"
-                    alt="RoomOS Dashboard Interface" class="hero-main-img">
+            <!-- Task List Card -->
+            <div class="bento-card bento-card-2" data-speed="0.6">
+                <div class="bento-card-inner glass-card">
+                    <div class="bento-header">
+                        <i class="ph-fill ph-check-square"></i>
+                        <span>Today's Tasks</span>
+                    </div>
+                    <div class="bento-tasks">
+                        <div class="task-item done">
+                            <div class="task-check checked"><i class="ph-bold ph-check"></i></div>
+                            <span>Dishes — Aditya</span>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-check"></div>
+                            <span>Groceries — Sumit</span>
+                        </div>
+                        <div class="task-item">
+                            <div class="task-check"></div>
+                            <span>Trash — Rahul</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Preview Card -->
+            <div class="bento-card bento-card-3" data-speed="0.45">
+                <div class="bento-card-inner glass-card">
+                    <div class="bento-header">
+                        <i class="ph-fill ph-chat-circle-text"></i>
+                        <span>House Chat</span>
+                    </div>
+                    <div class="bento-chat">
+                        <div class="chat-msg chat-msg-other">
+                            <div class="chat-avatar" style="background: #818cf8;"></div>
+                            <div class="chat-bubble">Rent paid! 🎉</div>
+                        </div>
+                        <div class="chat-msg chat-msg-self">
+                            <div class="chat-bubble">Nice! I'll update the ledger</div>
+                            <div class="chat-avatar" style="background: #ec4899;"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
 
-    <!-- Stat Bar -->
-    <div class="stat-bar">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <h3>10K+</h3>
-                    <p>Active Residents</p>
+        <!-- Hero Foreground Content -->
+        <div class="container hero-container">
+            <div class="hero-content hero-content-center hero-glass-panel">
+                <div class="section-tag hero-tag">
+                    <i class="ph-fill ph-sparkle"></i> v2.6.0 — Now Available
                 </div>
-                <div class="stat-item">
-                    <h3>500K+</h3>
-                    <p>Tasks Completed</p>
+                <h1 class="hero-title">
+                    <span class="title-line">Shared Living,</span><br>
+                    <span class="gradient-text">Simplified.</span>
+                </h1>
+                <p class="hero-subtitle">Automate chores, track shared expenses, and sync your household
+                    in one smart dashboard.</p>
+                <div class="hero-buttons">
+                    <a href="web/index.html" class="btn btn-primary btn-lg btn-glow">
+                        <i class="ph-bold ph-rocket-launch btn-icon"></i>
+                        Get Started
+                    </a>
+                    <a href="#" class="btn btn-glass btn-lg" id="watchDemoBtn">
+                        <i class="ph-bold ph-play-circle btn-icon"></i>
+                        Watch Demo
+                    </a>
                 </div>
-                <div class="stat-item">
-                    <h3>$2M+</h3>
-                    <p>Expenses Settled</p>
-                </div>
-                <div class="stat-item">
-                    <h3>99.9%</h3>
-                    <p>System Uptime</p>
+                <div class="trust-badges">
+                    <div class="badge badge-dark">
+                        <i class="ph-fill ph-wifi-slash badge-icon"></i>
+                        <span>Offline First</span>
+                    </div>
+                    <div class="badge badge-dark">
+                        <i class="ph-fill ph-shield-check badge-icon"></i>
+                        <span>Secure Sync</span>
+                    </div>
+                    <div class="badge badge-dark">
+                        <i class="ph-fill ph-android-logo badge-icon"></i>
+                        <span>Android Only</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Bento Grid Features -->
-    <section id="features" class="features-section">
-        <div class="container">
-            <div class="section-head">
-                <span class="sub">Capabilities</span>
-                <h2>Everything you need to <br>run your home.</h2>
-            </div>
-            <div class="bento-grid">
-                <!-- 1. Expense Tracking (Large) -->
-                <div class="bento-card span-2">
-                    <div class="bento-icon"><i class="ph-fill ph-wallet"></i></div>
-                    <h3 data-feature="expense-title">Expense Tracking</h3>
-                    <p data-feature="expense-desc">Split bills, track debts, and settle up effortlessly.</p>
+        <!-- Background Glow Orbs -->
+        <div class="hero-bg-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+    </section>
+
+    <!-- Marquee Section -->
+    <section class="marquee-section">
+        <div class="marquee-container">
+            <div class="marquee-track">
+                <div class="marquee-content">
+                    <span class="marquee-item">Expense Splitting</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Chore Automation</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Maid Attendance</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">House Chat</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Monthly Settlements</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Shared Groceries</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Offline Sync</span>
+                    <span class="marquee-separator">✦</span>
                 </div>
-                <!-- 2. Smart Lists -->
-                <div class="bento-card">
-                    <div class="bento-icon"><i class="ph-fill ph-shopping-cart"></i></div>
-                    <h3 data-feature="shop-title">Smart Shopping</h3>
-                    <p data-feature="shop-desc">Collaborative lists that sync in real-time.</p>
-                </div>
-                <!-- 3. Task Management -->
-                <div class="bento-card">
-                    <div class="bento-icon"><i class="ph-fill ph-check-square"></i></div>
-                    <h3 data-feature="task-title">Chore Rosters</h3>
-                    <p data-feature="task-desc">Fair, automated scheduling for household tasks.</p>
-                </div>
-                <!-- 4. Maid Attendance (Large) -->
-                <div class="bento-card span-2">
-                    <div class="bento-icon"><i class="ph-fill ph-users"></i></div>
-                    <h3>Maid Attendance Logs</h3>
-                    <p>Track domestic help attendance with precision. Calculate monthly payouts automatically based on
-                        daily logs and agreed rates.</p>
-                </div>
-                <!-- 5. Analytics -->
-                <div class="bento-card span-3">
-                    <div class="bento-icon"><i class="ph-fill ph-chart-pie-slice"></i></div>
-                    <h3>Deep Financial Analytics</h3>
-                    <p>Understand your spending habits with beautiful visualizations. Category heatmaps, monthly trends,
-                        and personal vs. shared cost breakdowns help you save money.</p>
+                <!-- Duplicate for seamless loop -->
+                <div class="marquee-content" aria-hidden="true">
+                    <span class="marquee-item">Expense Splitting</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Chore Automation</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Maid Attendance</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">House Chat</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Monthly Settlements</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Shared Groceries</span>
+                    <span class="marquee-separator">✦</span>
+                    <span class="marquee-item">Offline Sync</span>
+                    <span class="marquee-separator">✦</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Download Section -->
-    <section class="download-cta">
+    <!-- Key Benefits Section -->
+    <section class="benefits" id="features">
         <div class="container">
-            <div class="cta-inner">
-                <h2>Take your home to the next level.</h2>
-                <p>Join thousands of roommates already living smarter with RoomOS.</p>
-                <div class="cta-btns">
-                    <a href="web/index.html" class="btn-primary">Launch Web App</a>
-                    <a href="download.html" class="btn-secondary-white">Download APK</a>
+            <div class="section-header">
+                <span class="section-tag">Why RoomOS?</span>
+                <h2 class="section-title">Everything you need to <br>run your home.</h2>
+                <p class="section-subtitle">Money, chores, and communication - solved in one beautiful app.</p>
+            </div>
+            <div class="benefits-grid">
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ph-fill ph-wallet"></i>
+                    </div>
+                    <h3>Financial Harmony</h3>
+                    <p>Split bills, rent, and groceries in real-time. RoomOS maintains a running ledger so you always
+                        know who owes whom.</p>
                 </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ph-fill ph-check-square"></i>
+                    </div>
+                    <h3>Fair Chores</h3>
+                    <p>Automated interaction algorithms ensure no one gets stuck with the dishes twice. Vacation mode
+                        handles absences gracefully.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ph-fill ph-users"></i>
+                    </div>
+                    <h3>Maid Management</h3>
+                    <p>Digital attendance logs for your domestic help. Calculate salaries automatically based on daily
+                        entry/exit times.</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="benefit-icon">
+                        <i class="ph-fill ph-chat-circle-text"></i>
+                    </div>
+                    <h3>Centralized Chat</h3>
+                    <p>Keep house business separate from personal texts. Polls, announcements, and file sharing in one
+                        place.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Modules Section -->
+    <section class="modules" id="modules">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Powerful Modules</span>
+                <h2 class="section-title">A complete ecosystem for shared living</h2>
+                <p class="section-subtitle">Integrated tools designed to handle every aspect of your household
+                    operations.</p>
+            </div>
+            <div class="modules-grid">
+                <!-- Module 1 -->
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="ph-fill ph-receipt"></i>
+                    </div>
+                    <h3>Expense Tracking</h3>
+                    <ul>
+                        <li>Real-time bill splitting</li>
+                        <li>Support for unequal splits</li>
+                        <li>Category-wise analytics</li>
+                    </ul>
+                </div>
+                <!-- Module 2 -->
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="ph-fill ph-calendar-check"></i>
+                    </div>
+                    <h3>Chore Roster</h3>
+                    <ul>
+                        <li>Smart rotation algorithm</li>
+                        <li>Daily reminders</li>
+                        <li>Vacation/Sick mode</li>
+                    </ul>
+                </div>
+                <!-- Module 3 -->
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="ph-fill ph-user-list"></i>
+                    </div>
+                    <h3>Staff Attendance</h3>
+                    <ul>
+                        <li>Check-in / Check-out log</li>
+                        <li>Overtime calculation</li>
+                        <li>Monthly salary reports</li>
+                    </ul>
+                </div>
+                <!-- Module 4 -->
+                <div class="module-card">
+                    <div class="module-icon">
+                        <i class="ph-fill ph-chart-bar"></i>
+                    </div>
+                    <h3>Analytics & Reports</h3>
+                    <ul>
+                        <li>Spending trends</li>
+                        <li>Debt visualization</li>
+                        <li>Exportable PDF reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Simple Process</span>
+                <h2 class="section-title">Get started in minutes</h2>
+                <p class="section-subtitle">Join thousands of happy roommates managing their homes with RoomOS.</p>
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-number">1</div>
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <i class="ph-fill ph-house-simple"></i>
+                        </div>
+                        <h3>Create Your Home</h3>
+                        <p>Sign up and create a digital space for your apartment or house. It takes less than 2 minutes.
+                        </p>
+                    </div>
+                </div>
+                <div class="timeline-connector"></div>
+                <div class="timeline-item">
+                    <div class="timeline-number">2</div>
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <i class="ph-fill ph-paper-plane-right"></i>
+                        </div>
+                        <h3>Invite Roommates</h3>
+                        <p>Share a simple link to invite your housemates. They'll be instantly synced to the household.
+                        </p>
+                    </div>
+                </div>
+                <div class="timeline-connector"></div>
+                <div class="timeline-item">
+                    <div class="timeline-number">3</div>
+                    <div class="timeline-content">
+                        <div class="timeline-icon">
+                            <i class="ph-fill ph-magic-wand"></i>
+                        </div>
+                        <h3>Automate Life</h3>
+                        <p>Set up recurring bills and chores once, and let RoomOS handle the coordination forever.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Showcase Section -->
+    <section class="feature-showcase" id="showcase">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Inside RoomOS</span>
+                <h2 class="section-title">Beautifully designed, <br>powerfully built</h2>
+                <p class="section-subtitle">Each module in RoomOS is a fully-built feature designed to make shared
+                    living
+                    effortless. Available exclusively as an <strong>Android app</strong>.</p>
+            </div>
+
+            <!-- Feature 0: Home Dashboard -->
+            <div class="showcase-feature">
+                <div class="showcase-text">
+                    <div class="showcase-badge showcase-badge-indigo">
+                        <i class="ph-fill ph-house"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <h3>Your Day, At a Glance</h3>
+                    <p>The home screen is your mission control. A personalized greeting, today's class schedule
+                        pulled live from your timetable, and a real-time spending widget showing your monthly
+                        outflow — all on one screen, the moment you open the app.</p>
+                    <ul class="showcase-highlights">
+                        <li><i class="ph-bold ph-check-circle"></i> Live class schedule with room &amp; time details
+                        </li>
+                        <li><i class="ph-bold ph-check-circle"></i> Monthly spending vs. budget progress bar</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Quick-access buttons for expenses &amp; maid share
+                        </li>
+                    </ul>
+                </div>
+                <div class="showcase-phones">
+                    <div class="phone-mockup phone-main">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-05-77_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="Home Dashboard — Your day at a glance">
+                    </div>
+                    <div class="phone-mockup phone-secondary">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-10-88_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="Home Dashboard — Scrolled view with expenses">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 1: Expense Tracking -->
+            <div class="showcase-feature showcase-feature-reverse">
+                <div class="showcase-text">
+                    <div class="showcase-badge showcase-badge-mint">
+                        <i class="ph-fill ph-wallet"></i>
+                        <span>Finance</span>
+                    </div>
+                    <h3>Shared Expense Tracking</h3>
+                    <p>Never argue about money again. RoomOS tracks every rupee across your household with real-time
+                        bill splitting, a running "who owes whom" ledger, and monthly analytics.</p>
+                    <ul class="showcase-highlights">
+                        <li><i class="ph-bold ph-check-circle"></i> Auto-Debits for rent, food &amp; recurring bills
+                        </li>
+                        <li><i class="ph-bold ph-check-circle"></i> Spending vs. income ratio &amp; net balance</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Group vs. personal expense breakdowns</li>
+                    </ul>
+                </div>
+                <div class="showcase-phones">
+                    <div class="phone-mockup phone-main">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-28-13_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="Wallet — Shared expense management">
+                    </div>
+                    <div class="phone-mockup phone-secondary">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-34-41_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="Insights — Expense analytics">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 2: Maid & Chore Management -->
+            <div class="showcase-feature">
+                <div class="showcase-text">
+                    <div class="showcase-badge showcase-badge-amber">
+                        <i class="ph-fill ph-broom"></i>
+                        <span>Household</span>
+                    </div>
+                    <h3>Maid &amp; Chore Management</h3>
+                    <p>Domestic help management, digitized. Log attendance with a single tap, track cycles, and let
+                        RoomOS calculate salary automatically based on actual days worked.</p>
+                    <ul class="showcase-highlights">
+                        <li><i class="ph-bold ph-check-circle"></i> Morning &amp; evening attendance tracking</li>
+                        <li><i class="ph-bold ph-check-circle"></i> "Anyone not home today?" deduction logic</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Automatic salary calculation per cycle</li>
+                    </ul>
+                </div>
+                <div class="showcase-phones">
+                    <div class="phone-mockup phone-center">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-22-20_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="Maid Attendance — Morning and evening tracking">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 3: Smart Scheduling -->
+            <div class="showcase-feature showcase-feature-reverse">
+                <div class="showcase-text">
+                    <div class="showcase-badge showcase-badge-blue">
+                        <i class="ph-fill ph-calendar-check"></i>
+                        <span>Scheduling</span>
+                    </div>
+                    <h3>Smart Schedule &amp; Timetable</h3>
+                    <p>Your daily life, organized. A full academic timetable with day-by-day timeline views,
+                        plus AI Smart Import — scan a physical timetable and auto-generate your schedule.</p>
+                    <ul class="showcase-highlights">
+                        <li><i class="ph-bold ph-check-circle"></i> Day-by-day interactive timeline view</li>
+                        <li><i class="ph-bold ph-check-circle"></i> AI Smart Import from photo or JSON</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Room &amp; location info per session</li>
+                    </ul>
+                </div>
+                <div class="showcase-phones">
+                    <div class="phone-mockup phone-main">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-42-14-27.jpg.jpeg"
+                            alt="Schedule — Academic timetable timeline">
+                    </div>
+                    <div class="phone-mockup phone-secondary">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-42-19-08_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="AI Smart Import">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature 4: Crew & Settings -->
+            <div class="showcase-feature">
+                <div class="showcase-text">
+                    <div class="showcase-badge showcase-badge-teal">
+                        <i class="ph-fill ph-users-three"></i>
+                        <span>Team</span>
+                    </div>
+                    <h3>Crew &amp; Settings Hub</h3>
+                    <p>Your household crew, at a glance. Profiles, roles, invite links, and a centralized Settings
+                        hub for total control over your RoomOS experience.</p>
+                    <ul class="showcase-highlights">
+                        <li><i class="ph-bold ph-check-circle"></i> Roommate profiles with Admin/Crew roles</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Dark mode, dock config &amp; notifications</li>
+                        <li><i class="ph-bold ph-check-circle"></i> Security settings &amp; maid service toggles</li>
+                    </ul>
+                </div>
+                <div class="showcase-phones">
+                    <div class="phone-mockup phone-main">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-42-28-67_91688e4fb9084a9d02d7a18f4f09afce.jpg.jpeg"
+                            alt="The Crew — Roommate profiles">
+                    </div>
+                    <div class="phone-mockup phone-secondary">
+                        <div class="phone-notch"></div>
+                        <img src="img/Screenshot_2026-02-19-15-41-50-14.jpg.jpeg" alt="Settings — Full control">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Live Demo Section -->
+    <section class="live-demo-section" id="demo">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Try It Live</span>
+                <h2 class="section-title">Experience RoomOS right now</h2>
+                <p class="section-subtitle">Interact with the real app — no download needed. Tap, scroll, and explore
+                    every feature.</p>
+            </div>
+
+            <div class="demo-wrapper" style="flex-direction: column; text-align: center; gap: 32px; max-width: 600px;">
+                <div class="demo-info" style="align-items: center; max-width: 100%;">
+                    <div class="demo-hint"
+                        style="background: rgba(11, 87, 208, 0.05); border-color: rgba(11, 87, 208, 0.2); justify-content: center; margin-bottom: 20px;">
+                        <i class="ph-fill ph-hand-tap" style="font-size: 28px;"></i>
+                        <span style="font-size: 1.1rem; color: var(--text-color);">Experience the full RoomOS
+                            application instantly. Tap and explore inside a simulated Samsung S25 Ultra environment. No
+                            downloads or signups required.</span>
+                    </div>
+                    <div class="demo-actions" style="margin-top: 24px; width: 100%;">
+                        <button class="btn btn-primary btn-lg" id="openDemoModalBtn"
+                            style="width: 100%; padding: 20px; font-size: 1.25rem; border-radius: 20px; box-shadow: 0 12px 30px rgba(11, 87, 208, 0.3);">
+                            <i class="ph-bold ph-android-logo btn-icon" style="font-size: 28px;"></i>
+                            Launch Interactive Demo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section (Replaces Pricing) -->
+    <section class="pricing" id="download" style="padding-bottom: 100px;">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Get Started</span>
+                <h2 class="section-title">Ready to upgrade your home?</h2>
+                <p class="section-subtitle">Join the community today. RoomOS is free to use.</p>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+                <a href="web/index.html" class="btn btn-primary btn-lg" style="min-width: 200px;">
+                    <i class="ph-bold ph-rocket-launch btn-icon"></i> Launch Web App
+                </a>
+                <a href="download.html" class="btn btn-outline btn-lg" style="min-width: 200px;">
+                    <i class="ph-bold ph-android-logo btn-icon"></i> Download APK
+                </a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="main-footer">
         <div class="container">
-            <div class="footer-content">
-                <div class="f-brand">
-                    <a href="#" class="brand">
-                        <i class="ph-fill ph-house-line"></i>
-                        <span>RoomOS</span>
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <i class="ph-fill ph-house-line logo-icon" style="color:var(--white)"></i>
+                        RoomOS
                     </a>
-                    <p style="margin-top: 16px; color: var(--text-dim);">
-                        Redefining domestic management through intelligent software.
-                    </p>
+                    <p>Redefining domestic management through intelligent software.</p>
                 </div>
 
-                <div class="f-col">
-                    <h4>Product</h4>
-                    <nav>
+                <div class="footer-columns">
+                    <div class="col">
+                        <h4>Product</h4>
                         <a href="#features">Features</a>
                         <a href="changelog.html">Changelog</a>
                         <a href="download.html">Download</a>
-                    </nav>
-                </div>
-
-                <div class="f-col">
-                    <h4>Legal</h4>
-                    <nav>
-                        <a href="#" id="terms-link">Terms & Conditions</a>
-                        <a href="#">Privacy Policy</a>
-                    </nav>
-                </div>
-
-                <div class="f-col">
-                    <h4>Social</h4>
-                    <nav>
-                        <a href="https://github.com/Sumit7739/RoomOS_V2">GitHub</a>
+                    </div>
+                    <div class="col">
+                        <h4>Legal</h4>
+                        <a href="privacy.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                    <div class="col">
+                        <h4>Connect</h4>
+                        <a href="https://github.com/Sumit7739/RoomOS_V2" target="_blank">GitHub</a>
                         <a href="#">Twitter</a>
-                    </nav>
-                </div>
-                <div class="f-col">
-                    <h4>Legal</h4>
-                    <a href="privacy.html">Privacy Policy</a>
-                    <a href="terms.html">Terms of Service</a>
+                    </div>
                 </div>
             </div>
 
             <div class="footer-bottom">
                 <p>&copy; 2026 RoomOS Project.</p>
-                <p>Designed & Developed by <span>Aditya Kumar Singh</span></p>
+                <p>Designed & Developed by <a href="#" style="color:white; text-decoration: underline;">Aditya Kumar
+                        Singh</a></p>
             </div>
         </div>
     </footer>
 
+    <!-- Screenshot Lightbox Modal -->
+    <div class="lightbox-overlay" id="screenshotLightbox">
+        <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+        <div class="lightbox-phone">
+            <div class="lightbox-phone-camera"></div>
+            <img class="lightbox-img" id="lightboxImg" src="" alt="Screenshot preview">
+        </div>
+    </div>
+
+    <!-- Live Demo Modal -->
+    <div class="demo-modal-overlay" id="demoModal">
+        <button class="lightbox-close" id="demoModalClose" aria-label="Close">&times;</button>
+
+        <!-- Galaxy S25 Ultra Frame -->
+        <div class="demo-phone">
+            <div class="demo-phone-frame">
+                <div class="demo-status-bar">
+                    <span class="demo-time">3:41</span>
+                    <div class="demo-status-icons">
+                        <i class="ph-bold ph-cell-signal-full"></i>
+                        <i class="ph-bold ph-wifi-high"></i>
+                        <i class="ph-bold ph-battery-full"></i>
+                    </div>
+                </div>
+                <!-- Live App iframe -->
+                <iframe data-src="http://localhost:5173/?demo=true" id="demoModalFrame" title="RoomOS Live Demo"
+                    frameborder="0" allow="fullscreen"></iframe>
+            </div>
+            <!-- Home Indicator -->
+            <div class="demo-home-indicator"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script src="landing.js"></script>
-    <script src="theme.js"></script>
-    <script src="particles.js"></script>
 </body>
 
 </html>

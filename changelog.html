@@ -5,17 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Changelog | RoomOS Updates</title>
-    <meta name="description" content="See what's new in RoomOS. Track every update, fix, and feature release.">
+    <meta name="description" content="See what's new in RoomOS. Track every update, fix, and release.">
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="theme.css">
-    <link rel="stylesheet" href="landing.css">
+
+    <!-- Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="landing.css">
+
     <style>
+        body {
+            background-color: var(--gray-50);
+        }
+
         .changelog-page {
-            padding-top: 160px;
+            padding-top: 140px;
             padding-bottom: 100px;
         }
 
@@ -38,6 +49,7 @@
             font-size: clamp(2.5rem, 5vw, 4rem);
             font-weight: 800;
             letter-spacing: -1.5px;
+            color: var(--gray-900);
         }
 
         .timeline {
@@ -59,20 +71,21 @@
         }
 
         .release {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-lg);
             padding: 40px;
             margin-bottom: 40px;
             margin-left: 50px;
             position: relative;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
         }
 
         .release:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border-color: var(--border-hover);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
         }
 
         /* Timeline dot */
@@ -85,8 +98,8 @@
             height: 14px;
             background: var(--primary);
             border-radius: 50%;
-            border: 3px solid var(--bg-dark);
-            box-shadow: 0 0 12px var(--primary-glow);
+            border: 3px solid var(--gray-50);
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
         }
 
         .r-header {
@@ -99,17 +112,18 @@
         }
 
         .v-badge {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            background: var(--gradient-primary);
             color: #fff;
             padding: 6px 16px;
             border-radius: var(--radius-full);
             font-weight: 700;
             font-size: 0.9rem;
             letter-spacing: 0.5px;
+            box-shadow: var(--shadow-primary);
         }
 
         .r-date {
-            color: var(--text-muted);
+            color: var(--gray-500);
             font-size: 0.9rem;
             font-weight: 500;
         }
@@ -119,16 +133,17 @@
             font-weight: 700;
             margin-bottom: 12px;
             letter-spacing: -0.5px;
+            color: var(--gray-900);
         }
 
         .r-desc {
-            color: var(--text-dim);
+            color: var(--gray-600);
             margin-bottom: 32px;
             line-height: 1.7;
         }
 
         .change-group h4 {
-            color: var(--text-muted);
+            color: var(--gray-500);
             text-transform: uppercase;
             letter-spacing: 1.5px;
             font-size: 0.75rem;
@@ -145,7 +160,7 @@
             display: flex;
             gap: 12px;
             margin-bottom: 12px;
-            color: var(--text-dim);
+            color: var(--gray-700);
             line-height: 1.6;
             align-items: flex-start;
         }
@@ -188,39 +203,43 @@
 </head>
 
 <body>
-    <div class="glow-system">
-        <!-- Replaced by particles.js canvas -->
-    </div>
-
-    <nav class="main-nav">
-        <div class="container nav-wrap">
-            <a href="index.html" class="brand"><i class="ph-fill ph-house-line"></i><span>RoomOS</span></a>
-            <div class="nav-links" id="nav-links">
-                <a href="index.html#features">Features</a>
-                <a href="index.html#demo">Showcase</a>
-                <a href="changelog.html" class="active">Changelog</a>
-                <a href="download.html">Download APK</a>
-                <button id="theme-toggle" class="theme-toggle-btn">
-                    <i class="ph ph-sun"></i>
-                </button>
-                <a href="web/index.html" class="btn-nav">Launch App</a>
-            </div>
-            <button class="menu-toggle" id="menu-toggle">
-                <i class="ph ph-list"></i>
+    <!-- Navbar from landing.css -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="ph-fill ph-house-line logo-icon"></i>
+                RoomOS
+            </a>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
             </button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html#home">Home</a></li>
+                <li><a href="index.html#features">Features</a></li>
+                <li><a href="index.html#modules">Modules</a></li>
+                <li><a href="index.html#how-it-works">How It Works</a></li>
+                <li><a href="changelog.html" class="active" style="color: var(--primary);">Changelog</a></li>
+                <li><a href="download.html">Download</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <a href="web/index.html" class="btn btn-ghost">Login</a>
+                <a href="web/index.html" class="btn btn-primary">Launch App</a>
+            </div>
         </div>
     </nav>
 
     <main class="changelog-page">
         <div class="container">
-            <div class="section-head">
+            <div class="section-head animate-element animate-scale">
                 <span class="sub">Evolution</span>
                 <h1>Updates & Progress</h1>
             </div>
 
             <div class="timeline">
                 <!-- v2.6.0 -->
-                <div class="release">
+                <div class="release animate-element animate-right">
                     <div class="r-header">
                         <span class="v-badge">v2.6.0</span>
                         <span class="r-date">Nov 25, 2025</span>
@@ -241,7 +260,7 @@
                 </div>
 
                 <!-- v2.4.0 -->
-                <div class="release">
+                <div class="release animate-element animate-right">
                     <div class="r-header">
                         <span class="v-badge">v2.4.0</span>
                         <span class="r-date">Nov 24, 2025</span>
@@ -253,16 +272,47 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container footer-bottom">
-            <p>&copy; 2026 RoomOS Project. All rights reserved.</p>
-            <p>Developed by <span>Aditya Kumar Singh</span></p>
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">
+                        <i class="ph-fill ph-house-line logo-icon" style="color:var(--white)"></i>
+                        RoomOS
+                    </a>
+                    <p>Redefining domestic management through intelligent software.</p>
+                </div>
+
+                <div class="footer-columns">
+                    <div class="col">
+                        <h4>Product</h4>
+                        <a href="index.html#features">Features</a>
+                        <a href="changelog.html">Changelog</a>
+                        <a href="download.html">Download</a>
+                    </div>
+                    <div class="col">
+                        <h4>Legal</h4>
+                        <a href="privacy.html">Privacy</a>
+                        <a href="terms.html">Terms</a>
+                    </div>
+                    <div class="col">
+                        <h4>Connect</h4>
+                        <a href="https://github.com/Sumit7739/RoomOS_V2" target="_blank">GitHub</a>
+                        <a href="#">Twitter</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2026 RoomOS Project.</p>
+                <p>Designed & Developed by <a href="#" style="color:white; text-decoration: underline;">Aditya Kumar
+                        Singh</a></p>
+            </div>
         </div>
     </footer>
 
     <script src="landing.js"></script>
-    <script src="theme.js"></script>
-    <script src="particles.js"></script>
 </body>
 
 </html>

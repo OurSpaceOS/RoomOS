@@ -33,15 +33,12 @@
 
     // Initialize Canvas
     function init() {
+        const container = document.getElementById('particles-js');
+        if (!container) return; // Exit if container not found
+
         canvas.id = 'particle-canvas';
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.zIndex = '-1';
-        canvas.style.pointerEvents = 'none';
-        document.body.prepend(canvas);
+        canvas.style.display = 'block'; // Remove scrollbars
+        container.appendChild(canvas);
         
         resize();
         window.addEventListener('resize', resize);
