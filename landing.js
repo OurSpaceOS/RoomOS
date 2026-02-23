@@ -16,8 +16,43 @@ document.addEventListener('DOMContentLoaded', function() {
     initCounterAnimation();
     initMagneticButtons();
     initScreenshotLightbox();
-    initDemoModal();
+    initInteractiveShowcase();
 });
+
+/**
+ * Interactive Showcase (Demo Sync)
+ */
+function initInteractiveShowcase() {
+    const blocks = document.querySelectorAll('.feature-block');
+    if (blocks.length === 0) return;
+
+    // Listen for route changes from the iframe
+    window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'DEMO_ROUTE_CHANGE') {
+            const currentRoute = event.data.path;
+            
+            // Find the block that matches the route best
+            let matchedBlock = null;
+            blocks.forEach(block => {
+                const blockRoute = block.getAttribute('data-route');
+                if (currentRoute.includes(blockRoute)) {
+                    matchedBlock = block;
+                }
+                block.classList.remove('active');
+            });
+
+            // If a block matches, activate it
+            if (matchedBlock) {
+                matchedBlock.classList.add('active');
+            } else {
+                // If no exact match but we are at root, default to first block
+                if (currentRoute === '/' || currentRoute === '/dashboard') {
+                    blocks[0].classList.add('active');
+                }
+            }
+        }
+    });
+}
 
 /**
  * Sticky Navigation with Scroll Effect
@@ -489,52 +524,4 @@ function initScreenshotLightbox() {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
-}
-
-/**
- * Live Demo Glassmorphism Modal
- */
-function initDemoModal() {
-    const btn = document.getElementById('openDemoModalBtn');
-    const modal = document.getElementById('demoModal');
-    const closeBtn = document.getElementById('demoModalClose');
-    const frame = document.getElementById('demoModalFrame');
-
-    if (!btn || !modal) return;
-
-    // Open Modal
-    btn.addEventListener('click', () => {
-        // Lazy load the iframe source to save resources on initial page load
-        if (frame && !frame.src) {
-            frame.src = frame.getAttribute('data-src');
-        }
-        
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-    });
-
-    // Close Modal function
-    function closeModal() {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Close on overlay click (outside the phone)
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-
-    // Close button
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
-    }
-
-    // Escape key to close
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-            closeModal();
-        }
-    });
 }

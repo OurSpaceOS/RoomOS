@@ -25,11 +25,19 @@ import {
 } from "@phosphor-icons/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import useSettingsStore from "../store/settingsStore";
+import { useEffect } from "react";
 
 const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings, getJsonSetting } = useSettingsStore();
+
+  // Send route changes to parent frame for landing page sync
+  useEffect(() => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'DEMO_ROUTE_CHANGE', path: location.pathname }, '*');
+    }
+  }, [location.pathname]);
 
   // State for the overflow menu
   const [anchorEl, setAnchorEl] = useState(null);

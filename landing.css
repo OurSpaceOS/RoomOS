@@ -951,376 +951,118 @@ select {
 }
 
 /* ========================================
-   Feature Showcase Section (Premium)
+/* ========================================
+   Interactive Showcase (Split Layout)
    ======================================== */
-.feature-showcase {
+.interactive-showcase {
     padding: var(--section-padding);
     background: var(--white);
+    position: relative;
+    border-top: 1px solid var(--gray-200);
 }
 
-/* Each Feature Row */
-.showcase-feature {
+.showcase-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 80px;
-    align-items: center;
-    padding: 80px 0;
-    border-bottom: 1px solid var(--gray-100);
+    align-items: start;
+    position: relative;
 }
 
-.showcase-feature:last-child {
-    border-bottom: none;
-}
-
-/* Reverse layout for alternating rows */
-.showcase-feature-reverse {
-    direction: rtl;
-}
-
-.showcase-feature-reverse>* {
-    direction: ltr;
-}
-
-/* Text Side */
-.showcase-text {
+/* Left side: Content Container */
+.showcase-content {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    justify-content: center;
+    padding-top: 40px;
 }
 
-.showcase-text h3 {
-    font-size: 2rem;
+.showcase-header {
+    text-align: left;
+    max-width: 100%;
+    margin: 0 0 60px 0;
+}
+
+.feature-blocks {
+    position: relative;
+}
+
+.feature-block {
+    display: none;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.feature-block.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-block h3 {
+    font-size: 1.75rem;
     font-weight: 800;
     color: var(--gray-900);
+    margin: 16px 0;
     letter-spacing: -0.02em;
-    line-height: 1.2;
 }
 
-.showcase-text>p {
+.feature-block p {
     font-size: 1.0625rem;
-    color: var(--gray-500);
-    line-height: 1.8;
+    color: var(--gray-600);
+    line-height: 1.7;
+    margin-bottom: 20px;
 }
 
-/* Color-coded badge */
-.showcase-badge {
-    display: inline-flex;
+/* Right side: Sticky Demo Phone */
+.showcase-demo-wrapper {
+    position: sticky;
+    top: 120px;
+    height: calc(100vh - 140px);
+    display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border-radius: var(--radius-full);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    width: fit-content;
+    justify-content: center;
 }
 
-.showcase-badge i {
-    font-size: 16px;
-}
-
-.showcase-badge-mint {
-    background: #ecfdf5;
-    color: #059669;
-}
-
-.showcase-badge-amber {
-    background: #fffbeb;
-    color: #d97706;
-}
-
-.showcase-badge-blue {
-    background: #eff6ff;
-    color: #2563eb;
-}
-
-.showcase-badge-teal {
-    background: #f0fdfa;
-    color: #0d9488;
-}
-
-.showcase-badge-indigo {
-    background: #eef2ff;
-    color: #4f46e5;
-}
-
-/* Feature checklist */
-.showcase-highlights {
+.demo-phone-sticky {
+    position: relative;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    margin-top: 8px;
-    list-style: none;
-    padding: 0;
+    align-items: center;
 }
 
-.showcase-highlights li {
+.demo-hint {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 0.9375rem;
-    color: var(--gray-600);
-    font-weight: 500;
+    padding: 12px 20px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
 }
 
-.showcase-highlights li i {
-    font-size: 20px;
-    color: var(--primary);
-    flex-shrink: 0;
-}
-
-/* Phone Mockup Area */
-.showcase-phones {
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 24px;
-    position: relative;
-    min-height: 480px;
-    perspective: 1000px;
-}
-
-/* CSS Phone Frame — Samsung Galaxy S25 Style */
-.phone-mockup {
-    background: #0a0a0a;
-    border-radius: 44px;
-    padding: 8px;
-    position: relative;
-    box-shadow:
-        0 0 0 2px #3a3a3a,
-        0 0 0 4px #1a1a1a,
-        0 0 0 5px rgba(255, 255, 255, 0.08),
-        0 25px 60px -12px rgba(0, 0, 0, 0.4);
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-}
-
-.phone-mockup:hover {
-    transform: translateY(-8px);
-}
-
-/* Punch-hole camera (S25 centered) */
-.phone-mockup::before {
-    content: '';
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 10px;
-    height: 10px;
-    background: #1a1a2e;
-    border-radius: 50%;
-    z-index: 10;
-    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.8), 0 0 0 2px #0a0a0a;
-}
-
-/* Side power button */
-.phone-mockup::after {
-    content: '';
-    position: absolute;
-    right: -4px;
-    top: 110px;
-    width: 4px;
-    height: 45px;
-    background: linear-gradient(to bottom, #444, #333, #444);
-    border-radius: 0 3px 3px 0;
-}
-
-/* Hide the old notch element */
-.phone-notch {
-    display: none;
-}
-
-.phone-mockup img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 36px;
-    display: block;
-    cursor: pointer;
-}
-
-/* Primary phone — larger, in front */
-.phone-main {
-    width: 240px;
-    height: 500px;
-    z-index: 2;
-}
-
-/* Secondary phone — smaller, offset, behind */
-.phone-secondary {
-    width: 200px;
-    height: 420px;
-    z-index: 1;
-    transform: translateY(-20px);
-    opacity: 0.9;
-}
-
-.phone-secondary:hover {
-    transform: translateY(-28px);
-    opacity: 1;
-}
-
-/* Single centered phone */
-.phone-center {
-    width: 260px;
-    height: 540px;
-    z-index: 2;
-}
-
-/* ========================================
-   Screenshot Lightbox Modal
-   ======================================== */
-.lightbox-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.35s ease, visibility 0.35s ease;
-    cursor: pointer;
-}
-
-.lightbox-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-/* 
- * Live Demo Modal Overlay (Glassmorphism)
- */
-.demo-modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(10, 10, 14, 0.4);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    z-index: 9999;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.demo-modal-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
-.demo-modal-overlay .demo-phone {
-    transform: scale(0.9);
-    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
-    opacity: 0;
-}
-
-.demo-modal-overlay.active .demo-phone {
-    transform: scale(1);
-    opacity: 1;
-}
-
-/* S25 Phone Frame in Lightbox */
-.lightbox-phone {
-    background: #0a0a0a;
-    border-radius: 44px;
-    padding: 10px;
-    position: relative;
-    box-shadow:
-        0 0 0 2px #3a3a3a,
-        0 0 0 4px #1a1a1a,
-        0 0 0 5px rgba(255, 255, 255, 0.08),
-        0 40px 100px -20px rgba(0, 0, 0, 0.6);
-    transform: scale(0.85);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: default;
-    overflow: hidden;
-}
-
-.lightbox-overlay.active .lightbox-phone {
-    transform: scale(1);
-}
-
-/* Punch-hole camera */
-.lightbox-phone-camera {
-    position: absolute;
-    top: 18px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 12px;
-    height: 12px;
-    background: #1a1a2e;
-    border-radius: 50%;
-    z-index: 10;
-    box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.8), 0 0 0 2px #0a0a0a;
-}
-
-.lightbox-img {
-    display: block;
-    border-radius: 36px;
-    object-fit: contain;
-}
-
-.lightbox-close {
-    position: absolute;
-    top: 24px;
-    right: 32px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: white;
-    font-size: 32px;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.3s ease, transform 0.3s ease;
-    line-height: 1;
-}
-
-.lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
-}
-
-/* ========================================
-   Live Demo — Galaxy S25 Phone Simulator
-   ======================================== */
-.live-demo-section {
-    padding: var(--section-padding);
-    background: linear-gradient(180deg, var(--white) 0%, #f0f4ff 100%);
-}
-
-.demo-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 64px;
-    max-width: 900px;
-    margin: 0 auto;
-}
-
-/* Galaxy S25 Ultra Frame — taller, sharper, titanium */
+/* Galaxy S25 Ultra Frame */
 .demo-phone {
     flex-shrink: 0;
     position: relative;
 }
 
 .demo-phone-frame {
-    width: 310px;
-    height: 700px;
+    height: 80vh;
+    max-height: 850px;
+    min-height: 550px;
+    aspect-ratio: 9/20;
     background: #050505;
     border-radius: 28px;
     padding: 6px;
@@ -1334,20 +1076,7 @@ select {
     overflow: hidden;
 }
 
-/* Fullscreen styling for the phone frame */
-.demo-phone-frame:fullscreen {
-    /* Reset margins and positioning to let the browser handle it */
-    margin: auto;
-    /* Create a dark aesthetic backdrop so the titanium edges still pop */
-    background-color: #050505;
-}
-
-.demo-phone-frame::backdrop {
-    background: #111116;
-    /* Dark background behind the phone */
-}
-
-/* Punch-hole camera (S25 Ultra — centered, slightly smaller) */
+/* Punch-hole camera (S25 Ultra) */
 .demo-phone-frame::before {
     content: '';
     position: absolute;
@@ -1362,7 +1091,7 @@ select {
     box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.9), 0 0 0 1.5px #222;
 }
 
-/* Volume rocker (left side) */
+/* Volume rocker */
 .demo-phone-frame::after {
     content: '';
     position: absolute;
@@ -1409,6 +1138,7 @@ select {
     border: none;
     border-radius: 22px;
     background: #fff;
+    pointer-events: auto;
 }
 
 /* Home Indicator  */
@@ -1420,55 +1150,47 @@ select {
     margin: 10px auto 0;
 }
 
-/* Demo Info Side */
-.demo-info {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-    max-width: 340px;
-}
+/* Responsive Stacking */
+@media (max-width: 992px) {
+    .showcase-container {
+        grid-template-columns: 1fr;
+        gap: 60px;
+    }
 
-.demo-hint {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 20px 24px;
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-}
+    .showcase-header {
+        text-align: center;
+        margin: 0 auto 40px;
+    }
 
-.demo-hint i {
-    font-size: 24px;
-    color: var(--primary);
-    flex-shrink: 0;
-    margin-top: 2px;
-}
+    .showcase-demo-wrapper {
+        position: relative;
+        top: 0;
+        height: auto;
+        order: -1;
+        margin-bottom: 24px;
+    }
 
-.demo-hint span {
-    font-size: 0.9375rem;
-    color: var(--gray-500);
-    line-height: 1.6;
-}
-
-.demo-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .demo-wrapper {
-        flex-direction: column;
+    .feature-blocks {
         gap: 40px;
     }
 
+    .feature-block {
+        opacity: 1;
+        transform: none;
+        padding: 24px;
+        background: var(--gray-50);
+        border-color: var(--gray-200);
+    }
+
+    .demo-hint.desktop-only {
+        display: none;
+    }
+
     .demo-phone-frame {
-        width: 270px;
-        height: 610px;
-        border-radius: 24px;
+        width: 100%;
+        max-width: 340px;
+        height: auto;
+        aspect-ratio: 9/20;
     }
 }
 

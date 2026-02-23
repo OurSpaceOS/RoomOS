@@ -380,7 +380,7 @@ const Dashboard = () => {
       const next = sessions[i + 1];
       const nextStartMinutes = next
         ? parseInt(next.startTime.split(":")[0]) * 60 +
-          parseInt(next.startTime.split(":")[1])
+        parseInt(next.startTime.split(":")[1])
         : null;
 
       const threshold = nextStartMinutes ? nextStartMinutes - 10 : 1440;
@@ -498,10 +498,10 @@ const Dashboard = () => {
                 transition={
                   isRefreshing
                     ? {
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }
                     : { duration: 0 }
                 }
               >
