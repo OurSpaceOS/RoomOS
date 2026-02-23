@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initScreenshotLightbox();
     initInteractiveShowcase();
     initPolicyModals();
+    initThemeToggle();
 });
 
 /**
@@ -33,12 +34,15 @@ function initInteractiveShowcase() {
             const frameWidth = demoFrame.clientWidth - 12; // 6px left + 6px right padding
             const frameHeight = demoFrame.clientHeight - 12; // 6px top + 6px bottom padding
             
-            // We scale based on whichever dimension is the limiting factor to fit perfectly
-            const scaleX = frameWidth / 400; // 400px is the fixed CSS width
-            const scaleY = frameHeight / (400 * (20/9)); // 20/9 aspect ratio height
-            
-            const scale = Math.min(scaleX, scaleY);
+            // We scale based on width to maintain the 400px base layout
+            const scale = frameWidth / 400;
             demoFrame.style.setProperty('--iframe-scale', scale);
+            
+            // Adjust the iframe height so it perfectly fills the vertical space without empty "chin"
+            const iframe = demoFrame.querySelector('iframe');
+            if (iframe) {
+                iframe.style.height = (frameHeight / scale) + 'px';
+            }
         };
         
         // Recalculate on any resize of the frame (including browser zooms)
@@ -240,11 +244,16 @@ function initScrollAnimations() {
     // Elements to animate
     const animationConfig = [
         { selector: '.benefit-card', animation: 'up', stagger: 100 },
-        { selector: '.module-card', animation: 'up', stagger: 50 },
+        { selector: '.module-card', animation: 'up', stagger: 80 },
         { selector: '.timeline-item', animation: 'scale', stagger: 200 },
+        { selector: '.timeline-connector', animation: 'scale', stagger: 200 },
         { selector: '.showcase-hero-image', animation: 'up', stagger: 0 },
         { selector: '.showcase-feature', animation: 'up', stagger: 150 },
-        { selector: '.section-header', animation: 'up', stagger: 0 }
+        { selector: '.section-header', animation: 'up', stagger: 0 },
+        { selector: '.showcase-content', animation: 'left', stagger: 0 },
+        { selector: '.showcase-demo-wrapper', animation: 'right', stagger: 0 },
+        { selector: '.cta-actions', animation: 'up', stagger: 0 },
+        { selector: '.footer-top', animation: 'up', stagger: 0 },
     ];
 
     animationConfig.forEach(config => {
@@ -361,7 +370,7 @@ function initTiltEffect() {
                 const y = e.clientY - rect.top;
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
-                const rotateX = (y - centerY) / 20; // Reduced sensitivity
+                const rotateX = (y - centerY) / 20;
                 const rotateY = (centerX - x) / 20;
                 
                 card.style.transform = `
@@ -371,6 +380,12 @@ function initTiltEffect() {
                     translateY(-8px) 
                     scale(1.02)
                 `;
+
+                // Track mouse position for radial glow effect
+                const percentX = ((x / rect.width) * 100).toFixed(0);
+                const percentY = ((y / rect.height) * 100).toFixed(0);
+                card.style.setProperty('--mouse-x', percentX + '%');
+                card.style.setProperty('--mouse-y', percentY + '%');
             });
             
             card.addEventListener('mouseleave', () => {
@@ -621,5 +636,61 @@ function initPolicyModals() {
         if (e.key === 'Escape' && modal.classList.contains('active')) {
             closeModal();
         }
+    });
+}
+
+// Theme Toggle (Dark/Light Mode)
+function initThemeToggle() {
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = themeToggle?.querySelector('i');
+    
+    const syncAppTheme = (theme) => {
+        const iframe = document.getElementById('interactiveDemoFrame');
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({ type: 'THEME_CHANGE', theme: theme }, '*');
+        }
+    };
+
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('roomos-theme');
+    const initialTheme = (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) ? 'dark' : 'light';
+    
+    // Apply initial theme
+    if (initialTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeIcon?.classList.replace('ph-moon', 'ph-sun');
+    }
+
+    // Sync theme when iframe loads
+    const iframe = document.getElementById('interactiveDemoFrame');
+    if (iframe) {
+        iframe.addEventListener('load', () => {
+            const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
+            syncAppTheme(currentTheme);
+        });
+    }
+
+    themeToggle.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        const theme = isDark ? 'dark' : 'light';
+        
+        // Toggle Icon
+        if (isDark) {
+            themeIcon?.classList.replace('ph-moon', 'ph-sun');
+        } else {
+            themeIcon?.classList.replace('ph-sun', 'ph-moon');
+        }
+        
+        // Save preference
+        localStorage.setItem('roomos-theme', theme);
+        
+        // Sync with App
+        syncAppTheme(theme);
+        
+        // Add subtle click animation
+        themeToggle.style.transform = 'scale(0.8) rotate(15deg)';
+        setTimeout(() => {
+            themeToggle.style.transform = '';
+        }, 150);
     });
 }

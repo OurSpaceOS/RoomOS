@@ -46,6 +46,9 @@
                 <li><a href="download.html">Download</a></li>
             </ul>
             <div class="nav-buttons">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="ph-bold ph-moon"></i>
+                </button>
                 <a href="web/index.html" class="btn btn-ghost">Login</a>
                 <a href="web/index.html" class="btn btn-primary">Launch App</a>
             </div>
@@ -430,20 +433,36 @@
                         </ul>
                     </div>
 
-                    <!-- Feature: Analytics -->
+                    <!-- Feature: Insights -->
                     <div class="feature-block" data-route="/expense-analytics">
                         <div class="showcase-badge showcase-badge-blue">
                             <i class="ph-fill ph-chart-line-up"></i>
-                            <span>Deep Analytics</span>
+                            <span>Insights</span>
                         </div>
                         <h3>Data-Driven Financial Insights</h3>
                         <p>Deep dive into your household's spending habits. Visualize budget utilization, monitor your
-                            monthly outflow (currently ₹5,739), and optimize your shared budget with automated
-                            reporting.</p>
+                            monthly outflow, and optimize your shared budget with automated reporting.</p>
+
                         <ul class="showcase-highlights">
                             <li><i class="ph-bold ph-check-circle"></i> Stunning category-wise spending charts</li>
                             <li><i class="ph-bold ph-check-circle"></i> Complete month-over-month trend analysis</li>
                             <li><i class="ph-bold ph-check-circle"></i> Individual contribution breakdowns</li>
+                        </ul>
+                    </div>
+
+                    <!-- Feature: Schedule -->
+                    <div class="feature-block" data-route="/roster">
+                        <div class="showcase-badge" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">
+                            <i class="ph-fill ph-calendar-check"></i>
+                            <span>Schedule</span>
+                        </div>
+                        <h3>Automated Weekly Roster</h3>
+                        <p>Say goodbye to chore conflicts. RoomOS algorithmically generates a fair weekly schedule based
+                            on everyone's availability, time off, and past contributions.</p>
+                        <ul class="showcase-highlights">
+                            <li><i class="ph-bold ph-check-circle"></i> Input daily availability &amp; off days</li>
+                            <li><i class="ph-bold ph-check-circle"></i> Algorithmic fair chore distribution</li>
+                            <li><i class="ph-bold ph-check-circle"></i> One-tap schedule regeneration</li>
                         </ul>
                     </div>
 
@@ -511,7 +530,7 @@
     </section>
 
     <!-- CTA Section (Replaces Pricing) -->
-    <section class="pricing" id="download" style="padding-bottom: 100px;">
+    <section class="pricing" id="download">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Get Started</span>
@@ -519,13 +538,12 @@
                 <p class="section-subtitle">Join the community today. RoomOS is free to use.</p>
             </div>
 
-            <div class="cta-actions"
-                style="display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 48px;">
-                <a href="web/index.html" class="btn btn-primary btn-lg" style="min-width: 220px; height: 60px;">
+            <div class="cta-actions">
+                <a href="web/index.html" class="btn btn-primary btn-lg">
                     <i class="ph-bold ph-rocket-launch btn-icon"></i>
                     <span>Launch Web App</span>
                 </a>
-                <a href="download.html" class="btn btn-outline btn-lg" style="min-width: 220px; height: 60px;">
+                <a href="download.html" class="btn btn-outline btn-lg">
                     <i class="ph-bold ph-android-logo btn-icon"></i>
                     <span>Download APK</span>
                 </a>

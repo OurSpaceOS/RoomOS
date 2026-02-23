@@ -226,15 +226,26 @@ function toggleTheme() {
     const body = document.body;
     const current = body.getAttribute('data-theme') || 'dark';
     const next = current === 'light' ? 'dark' : 'light';
-    body.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
+    setTheme(next);
+}
+
+function setTheme(theme) {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
 
     // Update Icon
     const icon = document.querySelector('#theme-toggle i');
     if (icon) {
-        icon.className = next === 'light' ? 'ph ph-sun' : 'ph ph-moon';
+        icon.className = theme === 'light' ? 'ph ph-sun' : 'ph ph-moon';
     }
 }
+
+// Listen for theme changes from parent (Landing Page)
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'THEME_CHANGE') {
+        setTheme(event.data.theme);
+    }
+});
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
