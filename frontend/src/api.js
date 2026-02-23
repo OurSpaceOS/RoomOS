@@ -14,6 +14,8 @@ const api = axios.create({
 
 import { toast } from 'sonner';
 
+let hasShownDemoWarning = false;
+
 // Request Interceptor: Attach Token & Demo Mode Protection
 api.interceptors.request.use((config) => {
     // 1. Attach Token
@@ -31,7 +33,10 @@ api.interceptors.request.use((config) => {
         
         // Block write operations EXCEPT for the initial auto-login
         if (isWriteOperation && !isLoginEndpoint) {
-            toast.warning('Demo Mode: Action disabled. This is a read-only preview.');
+            if (!hasShownDemoWarning) {
+                toast.warning('Demo Mode: Action disabled. This is a read-only preview.');
+                hasShownDemoWarning = true;
+            }
             // Cancel the request by throwing a custom cancellation error
             return Promise.reject({
                 response: { data: { message: 'Demo Mode: Action disabled. This is a read-only preview.' } },
