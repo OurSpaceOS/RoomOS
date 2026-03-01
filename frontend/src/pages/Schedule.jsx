@@ -101,6 +101,7 @@ const Schedule = () => {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [jsonInput, setJsonInput] = useState("");
   const [isEditing, setIsEditing] = useState({});
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
   // Fetch schedule
   const {
@@ -140,6 +141,15 @@ const Schedule = () => {
     queryClient.invalidateQueries(["schedule"]);
     setIsEditing((prev) => ({ ...prev, [dayIndex]: false }));
     toast.info("Changes discarded");
+  };
+
+  const handleBack = () => {
+    const hasUnsavedEdits = Object.values(isEditing).some(Boolean);
+    if (hasUnsavedEdits) {
+      setShowLeaveDialog(true);
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleImportJson = () => {
@@ -318,7 +328,7 @@ const Schedule = () => {
         }}
       >
         <IconButton
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           sx={{
             bgcolor: "background.paper",
             mr: 2,
@@ -1124,6 +1134,49 @@ Only return the JSON, nothing else. Focus on capturing session names, room numbe
             sx={{ borderRadius: "14px", px: 3, fontWeight: 800 }}
           >
             Process Magic
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Uncommitted Changes Dialog */}
+      <Dialog
+        open={showLeaveDialog}
+        onClose={() => setShowLeaveDialog(false)}
+        PaperProps={{
+          sx: { borderRadius: "28px", p: 1, maxWidth: "380px" },
+        }}
+      >
+        <DialogTitle
+          sx={{ fontWeight: 900 }}
+        >
+          Uncommitted changes detected
+        </DialogTitle>
+        <DialogContent>
+          <Typography
+            variant="body2"
+            sx={{ color: "text.secondary", fontWeight: 600 }}
+          >
+            You have unsaved schedule changes. If you leave now, your changes
+            will be lost.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setShowLeaveDialog(false)}
+            sx={{ fontWeight: 800, color: "text.secondary" }}
+          >
+            Stay
+          </Button>
+          <Button
+            onClick={() => {
+              setShowLeaveDialog(false);
+              navigate(-1);
+            }}
+            variant="contained"
+            color="error"
+            sx={{ borderRadius: "14px", px: 3, fontWeight: 800 }}
+          >
+            Proceed
           </Button>
         </DialogActions>
       </Dialog>
