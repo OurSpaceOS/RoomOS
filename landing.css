@@ -12,15 +12,17 @@
        RoomOS old theme.css was small.
        Let's stick to the Reference colors for "Review" then user can ask to change.
     */
-    --primary: #6366f1;
-    /* Indigo */
-    --primary-dark: #4f46e5;
-    --primary-light: #818cf8;
-    --secondary: #8b5cf6;
-    /* Violet */
-    --secondary-dark: #7c3aed;
-    --accent: #ec4899;
-    /* Pink */
+    --primary: #576A8F;
+    /* Slate Blue */
+    --primary-dark: #3d5070;
+    --primary-light: #B7BDF7;
+    --secondary: #B7BDF7;
+    /* Lavender */
+    --secondary-dark: #576A8F;
+    --accent: #FF7444;
+    /* Orange */
+    --cream: #FFF8DE;
+    /* Warm Cream */
 
     /* Neutrals */
     --white: #ffffff;
@@ -36,8 +38,8 @@
     --gray-900: #0f172a;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    --gradient-hero: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #faf5ff 100%);
+    --gradient-primary: linear-gradient(135deg, #576A8F 0%, #B7BDF7 100%);
+    --gradient-hero: linear-gradient(135deg, #FFF8DE 0%, #f0eefb 50%, #FFF8DE 100%);
     --gradient-card: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 
     /* Shadows */
@@ -47,7 +49,7 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-    --shadow-primary: 0 10px 40px -10px rgba(99, 102, 241, 0.4);
+    --shadow-primary: 0 10px 40px -10px rgba(87, 106, 143, 0.4);
 
     /* Typography */
     --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -330,26 +332,26 @@ select {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #576A8F 0%, #B7BDF7 100%);
     color: var(--white);
-    box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 10px 30px -10px rgba(87, 106, 143, 0.4);
     border-radius: 14px;
 }
 
 .btn-primary:hover {
     transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 20px 40px -12px rgba(99, 102, 241, 0.6);
+    box-shadow: 0 20px 40px -12px rgba(87, 106, 143, 0.6);
 }
 
 .btn-outline {
-    background: rgba(139, 92, 246, 0.03);
+    background: rgba(87, 106, 143, 0.03);
     color: var(--primary);
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    border: 1px solid rgba(87, 106, 143, 0.3);
     border-radius: 14px;
 }
 
 .btn-outline:hover {
-    background: rgba(139, 92, 246, 0.08);
+    background: rgba(87, 106, 143, 0.08);
     border-color: var(--primary);
     transform: translateY(-2px);
 }
@@ -449,7 +451,7 @@ select {
     box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 40px rgba(99, 102, 241, 0.15);
+        0 0 40px rgba(87, 106, 143, 0.15);
     position: relative;
     overflow: hidden;
     /* Hero entrance animation */
@@ -509,7 +511,7 @@ select {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle at center, rgba(139, 92, 246, 0.12) 0%, transparent 60%);
+    background: radial-gradient(circle at center, rgba(87, 106, 143, 0.12) 0%, transparent 60%);
     animation: rotateGlow 40s ease-in-out infinite alternate;
     /* Slower, easing, and alternates direction */
     pointer-events: none;
@@ -533,16 +535,16 @@ select {
 
 /* Hero Tag */
 .hero-tag {
-    background: rgba(99, 102, 241, 0.15) !important;
-    color: #a5b4fc !important;
-    border: 1px solid rgba(99, 102, 241, 0.25);
+    background: rgba(87, 106, 143, 0.15) !important;
+    color: #B7BDF7 !important;
+    border: 1px solid rgba(87, 106, 143, 0.25);
     display: inline-flex !important;
     align-items: center;
     gap: 6px;
 }
 
 .hero-tag i {
-    color: #c084fc;
+    color: #FF7444;
 }
 
 .hero.hero-dark .hero-title {
@@ -557,7 +559,7 @@ select {
 }
 
 .hero.hero-dark .gradient-text {
-    background: linear-gradient(135deg, #a5b4fc 0%, #d8b4fe 50%, #fbcfe8 100%);
+    background: linear-gradient(135deg, #B7BDF7 0%, #d0d3f8 50%, #FFF8DE 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -669,7 +671,7 @@ select {
 }
 
 .badge-dark .badge-icon {
-    color: #818cf8;
+    color: #B7BDF7;
     font-size: 1rem;
 }
 
@@ -768,7 +770,7 @@ select {
 
 .bento-header i {
     font-size: 1rem;
-    color: #818cf8;
+    color: #B7BDF7;
 }
 
 /* Expense Card */
@@ -803,7 +805,7 @@ select {
 }
 
 .chart-bar.active {
-    background: linear-gradient(to top, #818cf8, #c084fc);
+    background: linear-gradient(to top, #B7BDF7, #FF7444);
 }
 
 /* Task List Card */
@@ -839,7 +841,7 @@ select {
 }
 
 .task-check.checked {
-    background: linear-gradient(135deg, #818cf8, #6366f1);
+    background: linear-gradient(135deg, #B7BDF7, #576A8F);
     border-color: transparent;
     color: white;
     font-size: 0.625rem;
@@ -906,7 +908,7 @@ select {
 .hero.hero-dark .shape-1 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+    background: radial-gradient(circle, #576A8F 0%, transparent 70%);
     top: -150px;
     right: -100px;
     filter: blur(80px);
@@ -915,7 +917,7 @@ select {
 .hero.hero-dark .shape-2 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+    background: radial-gradient(circle, #FF7444 0%, transparent 70%);
     bottom: -100px;
     left: -80px;
     filter: blur(80px);
@@ -924,7 +926,7 @@ select {
 .hero.hero-dark .shape-3 {
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, #8b5cf6 0%, transparent 70%);
+    background: radial-gradient(circle, #576A8F 0%, transparent 70%);
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -944,7 +946,7 @@ select {
 .section-tag {
     display: inline-block;
     padding: 8px 18px;
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(87, 106, 143, 0.08);
     color: var(--primary);
     font-size: 0.8125rem;
     font-weight: 700;
@@ -952,7 +954,7 @@ select {
     letter-spacing: 0.05em;
     border-radius: var(--radius-full);
     margin-bottom: 20px;
-    border: 1px solid rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(87, 106, 143, 0.1);
 }
 
 .section-title {
@@ -999,7 +1001,7 @@ select {
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(99, 102, 241, 0.08), transparent 40%);
+    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(87, 106, 143, 0.08), transparent 40%);
     opacity: 0;
     transition: opacity 0.4s ease;
     pointer-events: none;
@@ -1013,7 +1015,7 @@ select {
     transform: translateY(-8px);
     box-shadow:
         var(--shadow-xl),
-        0 0 40px rgba(99, 102, 241, 0.1);
+        0 0 40px rgba(87, 106, 143, 0.1);
     border-color: var(--primary);
 }
 
@@ -1024,14 +1026,14 @@ select {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(87, 106, 143, 0.1) 0%, rgba(183, 189, 247, 0.1) 100%);
     border-radius: var(--radius);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .benefit-card:hover .benefit-icon {
     transform: scale(1.1) rotate(-5deg);
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+    background: linear-gradient(135deg, rgba(87, 106, 143, 0.2) 0%, rgba(183, 189, 247, 0.2) 100%);
 }
 
 .benefit-icon svg,
@@ -1104,7 +1106,7 @@ select {
     transform: translateY(-6px);
     box-shadow:
         var(--shadow-lg),
-        0 0 30px rgba(99, 102, 241, 0.08);
+        0 0 30px rgba(87, 106, 143, 0.08);
     border-color: var(--secondary);
 }
 
@@ -1270,7 +1272,7 @@ select {
 }
 
 .timeline-item:hover .timeline-icon {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+    background: linear-gradient(135deg, rgba(87, 106, 143, 0.15), rgba(183, 189, 247, 0.15));
     transform: scale(1.08);
 }
 
@@ -1356,7 +1358,7 @@ select {
     left: 0;
     width: 100%;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary) 0%, #8b5cf6 100%);
+    background: linear-gradient(90deg, var(--primary) 0%, #576A8F 100%);
 }
 
 .feature-block.active {
@@ -1416,7 +1418,7 @@ select {
 .feature-block .showcase-highlights li i {
     font-size: 20px;
     color: var(--primary);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(87, 106, 143, 0.1);
     padding: 6px;
     border-radius: 50%;
     display: flex;
@@ -1480,7 +1482,7 @@ select {
         /* Highlight gleam */
         0 35px 90px -15px rgba(0, 0, 0, 0.6),
         /* Deep drop shadow */
-        0 0 50px rgba(99, 102, 241, 0.1);
+        0 0 50px rgba(87, 106, 143, 0.1);
     /* Subtle purple glow */
     overflow: hidden;
 }
@@ -2126,8 +2128,8 @@ select {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(87, 106, 143, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(87, 106, 143, 0.06) 0%, transparent 50%),
         radial-gradient(ellipse 50% 40% at 20% 100%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
     pointer-events: none;
     animation: ctaGlowPulse 8s ease-in-out infinite alternate;
@@ -2152,7 +2154,7 @@ select {
     width: 300px;
     height: 300px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(87, 106, 143, 0.12) 0%, transparent 70%);
     top: -100px;
     right: -80px;
     filter: blur(60px);
@@ -2269,7 +2271,7 @@ select {
     left: 10%;
     width: 80%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.15), transparent);
+    background: linear-gradient(90deg, transparent, rgba(87, 106, 143, 0.15), transparent);
     pointer-events: none;
 }
 
@@ -2326,7 +2328,7 @@ select {
     transform: translateX(-50%);
     width: 600px;
     height: 300px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(87, 106, 143, 0.06) 0%, transparent 70%);
     pointer-events: none;
     filter: blur(80px);
 }
