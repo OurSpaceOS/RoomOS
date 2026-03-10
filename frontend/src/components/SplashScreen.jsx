@@ -60,7 +60,7 @@ const SplashScreen = ({ onComplete }) => {
         >
           <Box
             component="img"
-            src="/logo.png"
+            src="./logo.png"
             alt="RoomOS"
             sx={{
               width: 120,

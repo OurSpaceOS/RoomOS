@@ -1,12 +1,11 @@
-
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import { CssBaseline, ThemeProvider } from '@mui/material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
-import getTheme from './theme';
-import useThemeStore from './store/themeStore';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HashRouter } from "react-router-dom";
+import getTheme from "./theme";
+import useThemeStore from "./store/themeStore";
 
 const Main = () => {
   const mode = useThemeStore((state) => state.mode);
@@ -15,9 +14,9 @@ const Main = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <BrowserRouter>
+      <HashRouter>
         <App />
-      </BrowserRouter>
+      </HashRouter>
     </ThemeProvider>
   );
 };
@@ -32,10 +31,10 @@ const queryClient = new QueryClient({
   },
 });
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-        <Main />
+      <Main />
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
