@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Base API URL
-export const API_BASE = 'https://prospine.in/roomOS/server/public';
+export const API_BASE = 'http://localhost:3001';
 
 // Setup Axio instance with base URL
 const api = axios.create({

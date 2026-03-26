@@ -106,6 +106,7 @@ const MaidAttendance = () => {
 
   const [cycleOffset, setCycleOffset] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [deadlineAutoOpened, setDeadlineAutoOpened] = useState(false);
   const [configForm, setConfigForm] = useState({
     rate: "1300",
     cycleStart: "",
@@ -267,15 +268,17 @@ const MaidAttendance = () => {
   );
 
   // ─── Cost Calculation ───
+  // Each person's rate = ₹1300/month. Their per-shift cost = ₹1300 / totalShifts.
+  // If a person is away on a shift, they simply don't pay. No redistribution.
   const stats = useMemo(() => {
     if (!config || !cycleDates) return null;
     const totalMembers = config.members.length;
     if (totalMembers === 0) return null;
 
-    const totalSalary = config.rate * totalMembers;
+    const ratePerPerson = config.rate; // ₹1300 per person per cycle
     const totalDays = cycleDates.days;
     const totalShiftsPossible = totalDays * 2;
-    const shiftCost = totalSalary / totalShiftsPossible;
+    const perPersonPerShift = ratePerPerson / totalShiftsPossible;
 
     const memberCosts = {};
     config.members.forEach((id) => {
@@ -292,36 +295,39 @@ const MaidAttendance = () => {
       const dk = fmtDate(d);
       const a = attendance[dk] || { m: false, e: false, excluded: [] };
       const excluded = a.excluded || [];
-      const activeIds = config.members.filter((id) => !excluded.includes(id));
-      if (activeIds.length === 0) continue;
 
       if (a.m || a.e) daysCame++;
       if (a.m) {
         morningShifts++;
         totalShiftsWorked++;
-        const perMember = shiftCost / activeIds.length;
-        activeIds.forEach((id) => {
-          memberCosts[id].shifts++;
-          memberCosts[id].cost += perMember;
+        // Each present member pays their own flat per-shift rate
+        config.members.forEach((id) => {
+          if (!excluded.includes(id)) {
+            memberCosts[id].shifts++;
+            memberCosts[id].cost += perPersonPerShift;
+          }
         });
       }
       if (a.e) {
         eveningShifts++;
         totalShiftsWorked++;
-        const perMember = shiftCost / activeIds.length;
-        activeIds.forEach((id) => {
-          memberCosts[id].shifts++;
-          memberCosts[id].cost += perMember;
+        config.members.forEach((id) => {
+          if (!excluded.includes(id)) {
+            memberCosts[id].shifts++;
+            memberCosts[id].cost += perPersonPerShift;
+          }
         });
       }
     }
 
+    const actualTotal = Object.values(memberCosts).reduce((sum, mc) => sum + mc.cost, 0);
+
     return {
       daysCame,
       totalDays,
-      totalSalary,
-      actualTotal: Math.round(totalShiftsWorked * shiftCost),
-      shiftCost: Math.round(shiftCost),
+      totalSalary: ratePerPerson * totalMembers,
+      actualTotal: Math.round(actualTotal),
+      perPersonPerShift: Math.round(perPersonPerShift),
       totalShiftsWorked,
       morningShifts,
       eveningShifts,
@@ -329,6 +335,30 @@ const MaidAttendance = () => {
       memberCosts,
     };
   }, [config, cycleDates, attendance]);
+
+  // ─── Auto-renew cycle when deadline has passed ───
+  React.useEffect(() => {
+    if (config && config.cycleEnd && !deadlineAutoOpened) {
+      const endDate = parseDate(config.cycleEnd);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (now > endDate) {
+        // Deadline is over — auto-save a new cycle to the server
+        const newStart = fmtDate(addDays(endDate, 1));
+        const newEnd = fmtDate(addDays(parseDate(newStart), 30));
+        setDeadlineAutoOpened(true);
+        saveConfigMutation.mutate({
+          rate: config.rate,
+          cycleStart: newStart,
+          cycleEnd: newEnd,
+          members: config.members,
+          split: config.members.length,
+          maidStartDay: config.maidStartDay || parseInt(config.cycleStart.split("-")[2]),
+        });
+        toast.success("New 31-day cycle started automatically!");
+      }
+    }
+  }, [config, deadlineAutoOpened]);
 
   // ─── Form ───
   const openSetup = () => {
@@ -340,13 +370,13 @@ const MaidAttendance = () => {
         members: [...config.members],
       });
     } else {
-      const today = new Date();
-      const first = new Date(today.getFullYear(), today.getMonth(), 1);
-      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const todayDate = new Date();
+      const startStr = fmtDate(todayDate);
+      const endStr = fmtDate(addDays(todayDate, 30));
       setConfigForm({
         rate: "1300",
-        cycleStart: fmtDate(first),
-        cycleEnd: fmtDate(last),
+        cycleStart: startStr,
+        cycleEnd: endStr,
         members: groupMembers.map((m) => m.id),
       });
     }
@@ -368,6 +398,7 @@ const MaidAttendance = () => {
       cycleEnd: configForm.cycleEnd,
       members: configForm.members,
       split: configForm.members.length,
+      maidStartDay: parseInt(configForm.cycleStart.split("-")[2]),
     });
   };
 
@@ -984,12 +1015,17 @@ const MaidAttendance = () => {
                     variant="outlined"
                     type="date"
                     value={configForm.cycleStart}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const newStart = e.target.value;
+                      const newEnd = newStart
+                        ? fmtDate(addDays(parseDate(newStart), 30))
+                        : "";
                       setConfigForm((f) => ({
                         ...f,
-                        cycleStart: e.target.value,
-                      }))
-                    }
+                        cycleStart: newStart,
+                        cycleEnd: newEnd,
+                      }));
+                    }}
                     InputProps={{
                       sx: {
                         borderRadius: "14px",
@@ -1021,20 +1057,21 @@ const MaidAttendance = () => {
                     variant="outlined"
                     type="date"
                     value={configForm.cycleEnd}
-                    onChange={(e) =>
-                      setConfigForm((f) => ({ ...f, cycleEnd: e.target.value }))
-                    }
+                    disabled
                     InputProps={{
+                      readOnly: true,
                       sx: {
                         borderRadius: "14px",
                         fontWeight: 700,
                         fontSize: "0.85rem",
                         height: 52,
+                        opacity: 0.7,
                         "& fieldset": {
                           borderColor: alpha(theme.palette.divider, 0.2),
                         },
                       },
                     }}
+                    helperText="Auto-set: 31 days from start"
                   />
                 </Box>
               </Stack>
@@ -1476,7 +1513,7 @@ const SummaryCard = ({
           {[
             `☀️ ${stats.morningShifts}`,
             `🌙 ${stats.eveningShifts}`,
-            `₹${stats.shiftCost}/shift`,
+            `₹${stats.perPersonPerShift}/shift`,
           ].map((t, i) => (
             <Typography
               key={i}

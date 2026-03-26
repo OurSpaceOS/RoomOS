@@ -4,6 +4,8 @@
   "scripts": {
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:build": "npm --prefix frontend run build",
+    "node-server:dev": "node node-server/server.js",
+    "dev": "npm run node-server:dev & npm run frontend:dev",
     "tauri": "tauri"
   },
   "devDependencies": {
